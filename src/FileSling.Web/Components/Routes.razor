@@ -1,0 +1,14 @@
+﻿﻿@using Th11s.FileSling.Web.Components.Layout
+
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <Authorizing>
+                Authorizing!
+            </Authorizing>
+            <NotAuthorized>
+                Not Authorized
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+</Router>
