@@ -16,6 +16,9 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
+app.MapStaticAssets()
+    .ShortCircuit();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
