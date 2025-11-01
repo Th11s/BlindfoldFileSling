@@ -1,0 +1,49 @@
+﻿@page "/fakelogin"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+
+@if (HostEnvironment.IsDevelopment())
+{
+    #if DEBUG
+    <form method="post" @onsubmit="DoLogin" @formname="starship-plain-form">
+        <AntiforgeryToken />
+        <div>
+            <button type="submit">Login</button>
+        </div>
+    </form>
+    #endif
+}
+
+@code {
+    [Inject]
+    private IHostEnvironment HostEnvironment { get; set; } = default!;
+
+    [Inject]
+    private IAuthenticationService AuthenticationService { get; set; } = default!;
+
+    [Inject]
+    private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
+
+    #if DEBUG
+    private async Task DoLogin()
+    {
+        await AuthenticationService.SignInAsync(
+            HttpContextAccessor.HttpContext, 
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new (
+                new ClaimsIdentity(
+                    [
+                        new ("sub", "843209-482390-283409"),
+                        new ("iss", "fake")
+                    ], 
+                    "Fake"
+                )
+            ),
+            null
+        );
+
+        Navigation.NavigateTo("/");
+    }
+    #endif
+}

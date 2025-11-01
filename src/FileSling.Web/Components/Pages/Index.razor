@@ -1,5 +1,14 @@
 ﻿@page "/"
 
+Directories Shared with you
+
 Your Directories
 
-Directories Shared with you
+<AuthorizeView>
+    <NotAuthorized>
+        <a href="fakelogin">Login now</a>
+    </NotAuthorized>
+    <Authorized>
+        Yay! I'm someone
+    </Authorized>
+</AuthorizeView>
