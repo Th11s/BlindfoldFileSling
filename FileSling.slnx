@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="E:/Dev/BlindfoldFileSling/src/FileSling.Web/FileSling.Web.csproj" Id="bf6f623d-263c-45c3-8097-b24e465562e6" />
     <Project Path="src/FileSling/FileSling.csproj" Id="89869dee-147b-4a6a-8dbc-e4fadf6e3210" />
