@@ -1,0 +1,10 @@
+﻿@page "/ls/{DirectoryId:string}"
+
+File listing here
+
+@code {
+    [SupplyParameterFromQuery]
+    public required string DirectoryId { get; set; }
+
+
+}
