@@ -1,10 +1,9 @@
-﻿namespace Th11s.FileSling.Web.Endpoints
+﻿namespace Th11s.FileSling.Web.Endpoints;
+
+public static class Directories
 {
-    public static class Directories
+    public static IResult Create()
     {
-        public static IResult Create()
-        {
-            return Results.Ok("Create Directory Endpoint");
-        }
+        return Results.Ok("Create Directory Endpoint");
     }
 }

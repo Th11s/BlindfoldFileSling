@@ -1,19 +1,51 @@
-﻿using Th11s.FileSling.Commands;
+﻿using System.Buffers.Text;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+
+using Th11s.FileSling.Commands;
+using Th11s.FileSling.Configuration;
+using Th11s.FileSling.Extensions;
 using Th11s.FileSling.Model;
 using Th11s.FileSling.Queries;
 
 namespace Th11s.FileSling.Services;
 
-public class FileSystemStorageService : IFileStorage
+public class FileSystemStorageService(
+    TimeProvider timeProvider,
+    FileSystemStorageOptions options
+    ) : IFileStorage
 {
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly FileSystemStorageOptions _options = options;
+
     public Task AppendFile(AppendFile command)
     {
         throw new NotImplementedException();
     }
 
-    public Task<DirectoryMetadata> CreateDirectory(CreateDirectory command)
+    public async Task<DirectoryMetadata> CreateDirectory(CreateDirectory command)
     {
-        throw new NotImplementedException();
+        var subjectBytes = Encoding.UTF8.GetBytes(command.CurrentUser.Subject);
+        var base64UserId = Base64Url.EncodeToString(subjectBytes);
+
+        var directoryId = new DirectoryId();
+
+        var directoryPath = Path.Combine(_options.StoragePath, base64UserId, directoryId.Value);
+        Directory.CreateDirectory(directoryPath);
+
+        var metadata = new DirectoryMetadata(
+            directoryId,
+            _timeProvider.GetUtcNow(),
+            new CryptoGuid().Value,
+            500_000_000_000L // 500 GB TODO
+        );
+
+        var metadataFilePath = Path.Combine(directoryPath, "metadata.json");
+        using var stream = File.OpenWrite(metadataFilePath);
+        await JsonSerializer.SerializeAsync(stream, metadata);
+
+        return metadata;
     }
 
     public Task<FileMetadata> CreateFile(CreateFile command)
