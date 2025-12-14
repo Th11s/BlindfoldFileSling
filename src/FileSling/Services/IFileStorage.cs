@@ -12,14 +12,13 @@ public interface IFileStorage
 
     Task<FileMetadata> CreateFile(CreateFile command);
     Task AppendFile(AppendFile command);
-    Task DiscardFile(DiscardFile command);
-
     Task FinalizeFile(FinalizeFile command);
+    
     Task DeleteFile(DeleteFile command);
 
 
     Task<DirectoryMetadata[]> GetDirectories(GetDirectory query);
-    Task<FileMetadata[]> ListDirectory(ListDirectory query);
+    Task<FileMetadata[]> ListDirectory(ListDirectories query);
 
     Task<Stream> GetFile(GetFile query);
 }

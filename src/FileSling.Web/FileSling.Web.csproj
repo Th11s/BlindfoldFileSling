@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Folder Include="typescript\Model\Commands\" />
 	  <Folder Include="wwwroot\" />
 	</ItemGroup>
 
@@ -17,6 +18,10 @@
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; native; contentfiles; analyzers</IncludeAssets>
 	  </PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\FileSling\FileSling.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -2,5 +2,5 @@
 
 
 public record GetDirectory();
-public record ListDirectory();
+public record ListDirectories();
 public record GetFile();

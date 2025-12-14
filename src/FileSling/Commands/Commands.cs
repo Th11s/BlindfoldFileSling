@@ -1,11 +1,25 @@
 ﻿using System.Security.Claims;
 
+using Th11s.FileSling.Model;
+
 namespace Th11s.FileSling.Commands;
 
-public record CreateDirectory(ClaimsPrincipal CurrentUser);
+public record CreateDirectory(
+    string ProtectedData,
+    string ChallangePassword,
+    string ProtectedChallengePassword,
+    ClaimsPrincipal CurrentUser
+);
 
-public record RenameDirectory();
-public record DeleteDirectory();
+public record RenameDirectory(
+    DirectoryId DirectoryId,
+    string NewDisplayName, 
+    ClaimsPrincipal CurrentUser
+);
+public record DeleteDirectory(
+    DirectoryId DirectoryId,
+    ClaimsPrincipal CurrentUser
+);
 
 public record CreateFile();
 public record AppendFile();

@@ -1,5 +1,4 @@
 ﻿using System.Buffers.Text;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -19,77 +18,106 @@ public class FileSystemStorageService(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly FileSystemStorageOptions _options = options;
 
-    public Task AppendFile(AppendFile command)
-    {
-        throw new NotImplementedException();
-    }
 
     public async Task<DirectoryMetadata> CreateDirectory(CreateDirectory command)
     {
-        var subjectBytes = Encoding.UTF8.GetBytes(command.CurrentUser.Subject);
-        var base64UserId = Base64Url.EncodeToString(subjectBytes);
-
+        // TODO: Authorization checks
+        var ownerId = command.CurrentUser.Subject;
         var directoryId = new DirectoryId();
 
-        var directoryPath = Path.Combine(_options.StoragePath, base64UserId, directoryId.Value);
+        var directoryPath = GetDirectoryPath(ownerId, directoryId);
         Directory.CreateDirectory(directoryPath);
 
         var metadata = new DirectoryMetadata(
             directoryId,
+            command.CurrentUser.Subject,
+            command.DisplayName,
             _timeProvider.GetUtcNow(),
-            new CryptoGuid().Value,
-            500_000_000_000L // 500 GB TODO
+            
+            command.CurrentUser.DirectoryQuota
         );
 
-        var metadataFilePath = Path.Combine(directoryPath, "metadata.json");
+        var metadataFilePath = Path.Combine(directoryPath, "directory.json");
         using var stream = File.OpenWrite(metadataFilePath);
         await JsonSerializer.SerializeAsync(stream, metadata);
+        await stream.FlushAsync();
 
         return metadata;
     }
 
-    public Task<FileMetadata> CreateFile(CreateFile command)
+
+    public Task RenameDirectory(RenameDirectory command)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
+
 
     public Task DeleteDirectory(DeleteDirectory command)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
+
+    private string GetDirectoryPath(OwnerId ownerId, DirectoryId directoryId)
+    {
+        var subjectBytes = Encoding.UTF8.GetBytes(ownerId.Value);
+        var base64UserId = Base64Url.EncodeToString(subjectBytes);
+        var directoryPath = Path.Combine(_options.StoragePath, base64UserId, directoryId.Value);
+     
+        return directoryPath;
+    }
+
+
+
+    public Task<FileMetadata> CreateFile(CreateFile command)
+    {
+        // TODO: Authorization checks
+        throw new NotImplementedException();
+    }
+
+    public Task AppendFile(AppendFile command)
+    {
+        // TODO: Authorization checks
+        throw new NotImplementedException();
+    }
+
+
     public Task DeleteFile(DeleteFile command)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
     public Task DiscardFile(DiscardFile command)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
     public Task FinalizeFile(FinalizeFile command)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
     public Task<DirectoryMetadata[]> GetDirectories(GetDirectory query)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
     public Task<Stream> GetFile(GetFile query)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
-    public Task<FileMetadata[]> ListDirectory(ListDirectory query)
+    public Task<FileMetadata[]> ListDirectory(ListDirectories query)
     {
+        // TODO: Authorization checks
         throw new NotImplementedException();
     }
 
-    public Task RenameDirectory(RenameDirectory command)
-    {
-        throw new NotImplementedException();
-    }
 }
