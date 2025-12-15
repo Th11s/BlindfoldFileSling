@@ -3,9 +3,9 @@
 namespace Th11s.FileSling.Model;
 
 [DebuggerDisplay($"{{{nameof(Value)},nq}}")]
-public record struct DirectoryId(string Value)
+public record struct FileId(string Value)
 {
-    public DirectoryId() 
+    public FileId() 
         : this(new CryptoGuid())
     { }
 }

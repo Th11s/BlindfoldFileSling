@@ -9,4 +9,6 @@ public class StorageOptions
 public class FileSystemStorageOptions
 {
     public required string StoragePath { get; set; }
+
+    public long DefaultDirectoryQuotaBytes { get; set; } = 1_000_000_000L; // 1 GB
 }

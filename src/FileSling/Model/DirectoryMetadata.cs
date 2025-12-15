@@ -10,18 +10,7 @@ public record DirectoryMetadata(
 
     long MaxStorageBytes,
 
-    byte[] Protected,
+    string Protected, // Expected to be a base64url-encoded string
     string ChallengePassword,
-    byte[] ProtectedChallengePassword
-);
-
-public record FileMetadata(
-    FileId Id,
-    DirectoryId DirectoryId,
-    OwnerId OwnerId,
-    
-    string Displayname,
-    DateTimeOffset CreatedAt,
-    
-    long SizeBytes
+    string ProtectedChallengePassword // Expected to be a base64url-encoded string
 );

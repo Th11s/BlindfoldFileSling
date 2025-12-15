@@ -18,14 +18,13 @@ public static class ClaimsPrincipalExtensions
             }
         }
 
-        public long DirectoryQuota
+        public long? DirectoryQuota
         {
             get
             {
                 var quotaClaim = principal.FindFirst("directory_quota_bytes");
                 return quotaClaim != null && long.TryParse(quotaClaim.Value, out var quota)
-                    ? quota
-                    : 500_000_000_000;
+                    ? quota : null;
             }
         }
     }

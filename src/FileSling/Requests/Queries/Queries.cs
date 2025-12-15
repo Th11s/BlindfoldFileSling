@@ -1,4 +1,4 @@
-﻿namespace Th11s.FileSling.Queries;
+﻿namespace Th11s.FileSling.Requests.Queries;
 
 
 public record GetDirectory();

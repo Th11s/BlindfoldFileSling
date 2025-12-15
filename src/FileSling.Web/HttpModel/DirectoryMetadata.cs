@@ -1,4 +1,4 @@
-﻿namespace Th11s.FileSling.Web.Model;
+﻿namespace Th11s.FileSling.Web.HttpModel;
 
 public record DirectoryMetadata(
     string DirectoryId,

@@ -1,24 +1,26 @@
-﻿using Th11s.FileSling.Commands;
+﻿using System.Security.Claims;
+
 using Th11s.FileSling.Model;
-using Th11s.FileSling.Queries;
+using Th11s.FileSling.Requests.Commands;
+using Th11s.FileSling.Requests.Queries;
 
 namespace Th11s.FileSling.Services;
 
 public interface IFileStorage
 {
-    Task<DirectoryMetadata> CreateDirectory(CreateDirectory command);
-    Task RenameDirectory(RenameDirectory command);
-    Task DeleteDirectory(DeleteDirectory command);
+    Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser);
+    Task RenameDirectory(RenameDirectory command, ClaimsPrincipal currentUser);
+    Task DeleteDirectory(DeleteDirectory command, ClaimsPrincipal currentUser);
 
-    Task<FileMetadata> CreateFile(CreateFile command);
-    Task AppendFile(AppendFile command);
-    Task FinalizeFile(FinalizeFile command);
+    Task<FileMetadata> CreateFile(CreateFile command, ClaimsPrincipal currentUser);
+    Task AppendFile(AppendFile command, ClaimsPrincipal currentUser);
+    Task FinalizeFile(FinalizeFile command, ClaimsPrincipal currentUser);
     
-    Task DeleteFile(DeleteFile command);
+    Task DeleteFile(DeleteFile command, ClaimsPrincipal currentUser);
 
 
-    Task<DirectoryMetadata[]> GetDirectories(GetDirectory query);
-    Task<FileMetadata[]> ListDirectory(ListDirectories query);
+    Task<DirectoryMetadata[]> GetDirectories(GetDirectory query, ClaimsPrincipal currentUser);
+    Task<FileMetadata[]> ListDirectory(ListDirectories query, ClaimsPrincipal currentUser);
 
-    Task<Stream> GetFile(GetFile query);
+    Task<Stream> GetFile(GetFile query, ClaimsPrincipal currentUser);
 }
