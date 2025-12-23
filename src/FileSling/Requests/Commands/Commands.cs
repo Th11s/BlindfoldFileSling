@@ -1,18 +1,14 @@
-﻿using System.Security.Claims;
-
-using Th11s.FileSling.Model;
+﻿using Th11s.FileSling.Model;
 
 namespace Th11s.FileSling.Requests.Commands;
 
 public record CreateDirectory(
-    string ProtectedData,
-    string ChallengePassword,
-    string ProtectedChallengePassword
+    string ProtectedData
 );
 
-public record RenameDirectory(
+public record ModifyDirectory(
     DirectoryId DirectoryId,
-    string NewDisplayName
+    string ProtectedData
 );
 public record DeleteDirectory(
     DirectoryId DirectoryId
@@ -20,19 +16,24 @@ public record DeleteDirectory(
 
 public record CreateFile(
     DirectoryId DirectoryId,
-    long ExpectedSizeBytes,
+    ulong SizeInBytes,
+    uint ChunkCount,
 
     string ProtectedData
 );
 
-public record AppendFile(
+public record WriteFileChunk(
     DirectoryId DirectoryId,
     FileId FileId,
 
-    long OffsetBytes,
+    uint ChunkNumber,
     Stream Data
 );
-public record DiscardFile();
-public record FinalizeFile();
 
-public record DeleteFile();
+public record FinalizeFile(
+    DirectoryId DirectoryId,
+    FileId FileId);
+
+public record DeleteFile(
+    DirectoryId DirectoryId,
+    FileId FileId);

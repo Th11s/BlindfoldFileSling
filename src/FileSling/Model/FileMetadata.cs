@@ -7,7 +7,8 @@ public record FileMetadata(
     
     DateTimeOffset CreatedAt,
     
-    long SizeBytes,
+    ulong SizeInBytes,
+    uint ChunkCount,
     int DownloadCount,
 
     string Protected // Expected to be a base64url-encoded string

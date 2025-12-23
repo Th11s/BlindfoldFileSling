@@ -14,12 +14,12 @@ internal static class Directories
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> Create(Commands.CreateDirectory command)
+    internal static async Task<IResult> Create(Requests.Commands.CreateDirectory command)
     {
         return Results.Ok("Create Directory Endpoint");
     }
 
-    internal static async Task<IResult> Rename(string directoryId, Commands.RenameDirectory command)
+    internal static async Task<IResult> Rename(string directoryId, Requests.Commands.ModifyDirectory command)
     {
         return Results.Ok($"Rename Directory Endpoint for {directoryId}");
     }
