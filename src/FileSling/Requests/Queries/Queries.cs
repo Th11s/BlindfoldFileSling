@@ -3,7 +3,8 @@
 namespace Th11s.FileSling.Requests.Queries;
 
 
-public record GetDirectory();
+public record GetDirectories();
+public record GetDirectory(DirectoryId DirectoryId);
 
 public record ListDirectory(
     DirectoryId DirectoryId

@@ -1,10 +1,13 @@
 ﻿@page "/ls/{DirectoryId}"
+@using Microsoft.AspNetCore.Authorization
+@using Th11s.FileSling.Services
 
-File listing here
+@attribute [StreamRendering]
+@attribute [Authorize(Policies.DirectoryReadAccess)]
+
+<th11s-directory-listing directory-id="@DirectoryId"></th11s-directory-listing>
 
 @code {
-    [SupplyParameterFromQuery]
+    [Parameter]
     public required string DirectoryId { get; set; }
-
-
 }

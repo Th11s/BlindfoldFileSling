@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
+
 using Th11s.FileSling.Web.Components;
 using Th11s.FileSling.Web.Endpoints;
+using Th11s.FileSling.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +18,19 @@ builder.Services.AddAuthentication()
 
         options.LogoutPath = "/logout";
     });
+
 builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(Policies.DirectoryReadAccess, p =>
+    {
+        p.Requirements.Add(DirectoryAccessRequirement.Read);
+    })
+    .AddPolicy(Policies.DirectoryWriteAccess, p =>
+    {
+        p.Requirements.Add(DirectoryAccessRequirement.Write);
+    });
+
+builder.Services.AddSingleton<IAuthorizationHandler, DirectoryIdRequirementHandler>();
 
 builder.Services.AddRazorComponents();
 builder.Services.AddCascadingAuthenticationState();

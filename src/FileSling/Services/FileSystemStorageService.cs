@@ -186,7 +186,7 @@ public class FileSystemStorageService(
 
 
 
-    public async Task<IEnumerable<DirectoryMetadata>> GetDirectories(GetDirectory query, ClaimsPrincipal currentUser)
+    public async Task<IEnumerable<DirectoryMetadata>> GetDirectories(ClaimsPrincipal currentUser)
     {
         // Read the index file for the current user
         var ownerIndexDirectory = Path.Combine(_options.StoragePath, OwnerIndexFolderName);
@@ -232,7 +232,15 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query, ClaimsPrincipal currentUser)
+    public async Task<DirectoryMetadata> GetDirectory(GetDirectory query)
+    {
+        var directoryPath = GetDirectoryPath(query.DirectoryId);
+        var metadata = await ReadMetadataFile<DirectoryMetadata>(directoryPath, DirectoryMetadataFileName);
+        return metadata;
+    }
+
+
+    public async Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query)
     {
         // enumerate files in directory
         var directoryPath = new DirectoryInfo(GetDirectoryPath(query.DirectoryId));

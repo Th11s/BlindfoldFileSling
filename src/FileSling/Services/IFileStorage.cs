@@ -19,8 +19,9 @@ public interface IFileStorage
     Task DeleteFile(DeleteFile command, ClaimsPrincipal currentUser);
 
 
-    Task<IEnumerable<DirectoryMetadata>> GetDirectories(GetDirectory query, ClaimsPrincipal currentUser);
-    Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query, ClaimsPrincipal currentUser);
+    Task<IEnumerable<DirectoryMetadata>> GetDirectories(GetDirectories query, ClaimsPrincipal currentUser);
+    Task<DirectoryMetadata> GetDirectory(GetDirectory query);
+    Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query);
 
     Task<Stream> GetFileChunk(GetFile query, ClaimsPrincipal currentUser);
 }

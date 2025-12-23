@@ -1,4 +1,7 @@
 ﻿
+using Th11s.FileSling.Model;
+using Th11s.FileSling.Services;
+
 namespace Th11s.FileSling.Web.Endpoints;
 
 internal static class Directories
@@ -9,9 +12,19 @@ internal static class Directories
     }
 
 
-    internal static async Task<IResult> Get(string directoryId)
+    internal static async Task<IResult> Get(
+        string directoryId,
+        IFileStorage storage
+        )
     {
-        throw new NotImplementedException();
+        var directory = await storage.GetDirectory(new(new(directoryId)));
+        var files = await storage.ListDirectoryContent(new(new(directoryId)));
+
+        return Results.Ok(new
+        {
+            Directory = directory,
+            Files = files
+        });
     }
 
     internal static async Task<IResult> Create(Requests.Commands.CreateDirectory command)
