@@ -8,7 +8,7 @@ namespace Th11s.FileSling.Services;
 
 public interface IFileStorage
 {
-    Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser);
+    Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser, CancellationToken cancellationToken);
     Task RenameDirectory(ModifyDirectory command, ClaimsPrincipal currentUser);
     Task DeleteDirectory(DeleteDirectory command, ClaimsPrincipal currentUser);
 

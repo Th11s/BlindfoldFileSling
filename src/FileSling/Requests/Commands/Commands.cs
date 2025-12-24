@@ -3,6 +3,7 @@
 namespace Th11s.FileSling.Requests.Commands;
 
 public record CreateDirectory(
+    string EncryptionHeader,
     string ProtectedData
 );
 
@@ -16,7 +17,7 @@ public record DeleteDirectory(
 
 public record CreateFile(
     DirectoryId DirectoryId,
-    ulong SizeInBytes,
+    long SizeInBytes,
     uint ChunkCount,
 
     string ProtectedData

@@ -1,30 +1,26 @@
 import registerComponents from "./WebComponents.js";
+import * as Crypto from "./Crypto.js";
+import * as Utils from "./Utils.js";
+import * as ClientStorage from "./ClientStorage.js";
+
+import * as Model from "./Model.js";
 
 export function initializeApp(blazor: any) {
-    blazor.addEventListener('enhancedload', onEnhancedNavigated);
-
     registerComponents();
     onEnhancedNavigated();
+
+    blazor.addEventListener('enhancedload', onEnhancedNavigated);
 }  
 
 function onEnhancedNavigated() {
-    const folderCreationForm = document.getElementById('create-directory-form') as HTMLElement;
+    registerFolderCreationFormHandler();
+}
+
+function registerFolderCreationFormHandler() {
+    const folderCreationForm = document.getElementById('create-directory-form');
     if (folderCreationForm) {
         if (!folderCreationForm.getAttribute('data-onsubmit-attached')) {
-            folderCreationForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const folderName = ((event.target as HTMLElement).querySelector('input[type="text"]') as HTMLInputElement)?.value;
-                if (folderName) {
-                    const response = await fetch('/api/directory', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ name: folderName })
-                    });
-                }
-            });
-
+            folderCreationForm.addEventListener('submit', createFolderFromForm);
             folderCreationForm.setAttribute('data-onsubmit-attached', 'true');
             console.debug('Folder creation form onsubmit handler attached.');
         }
@@ -34,5 +30,47 @@ function onEnhancedNavigated() {
     }
     else {
         console.debug('No folder creation form found on this page.');
+    }
+}
+
+async function createFolderFromForm(event: SubmitEvent) {
+    event.preventDefault();
+    const directoryName = ((event.target as HTMLFormElement)?.querySelector('input[type="text"]') as HTMLInputElement)?.value;
+    if (directoryName) {
+        const cryptoKeyAndIV = await Crypto.createCyptoKeyAndIV();
+        const protectableData: Model.DirectoryProtectedData = {
+            displayName: directoryName
+        };
+        const protectedData = await Crypto.encryptJSONBase64(protectableData, cryptoKeyAndIV);
+
+        const response = await fetch('/api/directory', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                encryptionHeader: Utils.arrayBufferToBase64(cryptoKeyAndIV.iv),
+                protectedData
+            })
+        });
+
+        if (response.ok) {
+            console.debug(`Folder "${directoryName}" created successfully.`);
+            const responseObject = await response.json() as Model.DirectoryMetadataResponse;
+            console.debug('Directory Metadata:', responseObject);
+
+            var metadata: Model.DirectoryMetadata = {
+                directoryId: responseObject.directoryId,
+                createdAt: new Date(responseObject.createdAt),
+                expiresAt: responseObject.expiresAt ? new Date(responseObject.expiresAt) : null,
+                lastFileUploadAt: responseObject.lastFileUploadAt ? new Date(responseObject.lastFileUploadAt) : null,
+                maxStorageBytes: responseObject.maxStorageBytes,
+                usedStorageBytes: responseObject.usedStorageBytes,
+                displayName: directoryName
+            };
+
+            await ClientStorage.storeDirectoryKey(responseObject.directoryId, cryptoKeyAndIV.cryptoKey);
+            await ClientStorage.storeDirectoryMetadata(responseObject.directoryId, metadata);
+        }
     }
 }

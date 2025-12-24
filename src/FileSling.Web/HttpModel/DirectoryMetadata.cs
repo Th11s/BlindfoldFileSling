@@ -9,6 +9,5 @@ public record DirectoryMetadata(
     long MaxStorageBytes,
     long UsedStorageBytes,
 
-    byte[] Protected,
-    byte[] ProtectedChallengePassword
+    string Protected
 );

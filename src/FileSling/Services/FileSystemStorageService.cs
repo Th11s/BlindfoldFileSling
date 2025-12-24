@@ -32,7 +32,10 @@ public class FileSystemStorageService(
     private readonly IOptions<FileSystemStorageOptions> _options = options;
 
 
-    public async Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser)
+    public async Task<DirectoryMetadata> CreateDirectory(
+        CreateDirectory command, 
+        ClaimsPrincipal currentUser,
+        CancellationToken cancellationToken)
     {
         DirectoryId directoryId;
         string? directoryPath;
@@ -54,9 +57,13 @@ public class FileSystemStorageService(
             default,
 
             currentUser.DirectoryQuota ?? _options.Value.DefaultDirectoryQuotaBytes,
+            0,
 
+            command.EncryptionHeader,
             command.ProtectedData
         );
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         await UpdateMetadataFile(directoryPath, DirectoryMetadataFileName, metadata);
         await AddDirectoryToOwnerIndex(currentUser, directoryId);
