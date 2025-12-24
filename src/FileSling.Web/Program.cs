@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 
+using Th11s.FileSling.Configuration;
+using Th11s.FileSling.Services;
 using Th11s.FileSling.Web.Components;
 using Th11s.FileSling.Web.Endpoints;
 using Th11s.FileSling.Web.Security;
@@ -31,6 +33,10 @@ builder.Services.AddAuthorizationBuilder()
     });
 
 builder.Services.AddSingleton<IAuthorizationHandler, DirectoryIdRequirementHandler>();
+builder.Services.AddScoped<IFileStorage, FileSystemStorageService>();
+builder.Services.AddOptions<FileSystemStorageOptions>()
+    .Bind(builder.Configuration.GetSection(FileSystemStorageOptions.SectionName))
+    .ValidateDataAnnotations();
 
 builder.Services.AddRazorComponents();
 builder.Services.AddCascadingAuthenticationState();

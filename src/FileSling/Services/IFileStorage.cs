@@ -19,7 +19,7 @@ public interface IFileStorage
     Task DeleteFile(DeleteFile command, ClaimsPrincipal currentUser);
 
 
-    Task<IEnumerable<DirectoryMetadata>> GetDirectories(GetDirectories query, ClaimsPrincipal currentUser);
+    Task<IEnumerable<DirectoryMetadata>> GetDirectories(ClaimsPrincipal currentUser);
     Task<DirectoryMetadata> GetDirectory(GetDirectory query);
     Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query);
 

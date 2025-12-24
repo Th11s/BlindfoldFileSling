@@ -1,6 +1,4 @@
-﻿
-using Th11s.FileSling.Model;
-using Th11s.FileSling.Services;
+﻿using Th11s.FileSling.Services;
 
 namespace Th11s.FileSling.Web.Endpoints;
 

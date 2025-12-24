@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 
+using Microsoft.Extensions.Options;
+
 using Th11s.FileSling.Configuration;
 using Th11s.FileSling.Extensions;
 using Th11s.FileSling.Model;
@@ -11,7 +13,7 @@ namespace Th11s.FileSling.Services;
 
 public class FileSystemStorageService(
     TimeProvider timeProvider,
-    FileSystemStorageOptions options
+    IOptions<FileSystemStorageOptions> options
     ) : IFileStorage
 {
     private const string DirectoryMetadataFileName = "_directory.json";
@@ -27,7 +29,7 @@ public class FileSystemStorageService(
     private const string OwnerIndexFileExtension = ".idx";
 
     private readonly TimeProvider _timeProvider = timeProvider;
-    private readonly FileSystemStorageOptions _options = options;
+    private readonly IOptions<FileSystemStorageOptions> _options = options;
 
 
     public async Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser)
@@ -51,7 +53,7 @@ public class FileSystemStorageService(
             default,
             default,
 
-            currentUser.DirectoryQuota ?? _options.DefaultDirectoryQuotaBytes,
+            currentUser.DirectoryQuota ?? _options.Value.DefaultDirectoryQuotaBytes,
 
             command.ProtectedData
         );
@@ -189,7 +191,7 @@ public class FileSystemStorageService(
     public async Task<IEnumerable<DirectoryMetadata>> GetDirectories(ClaimsPrincipal currentUser)
     {
         // Read the index file for the current user
-        var ownerIndexDirectory = Path.Combine(_options.StoragePath, OwnerIndexFolderName);
+        var ownerIndexDirectory = Path.Combine(_options.Value.StoragePath, OwnerIndexFolderName);
         var ownerIndexFilePath = Path.Combine(ownerIndexDirectory, $"{currentUser.Subject}{OwnerIndexFileExtension}");
         if (!File.Exists(ownerIndexFilePath))
         {
@@ -287,7 +289,7 @@ public class FileSystemStorageService(
 
     private string GetDirectoryPath(DirectoryId directoryId)
     {
-        var directoryPath = Path.Combine(_options.StoragePath, directoryId.Value);
+        var directoryPath = Path.Combine(_options.Value.StoragePath, directoryId.Value);
 
         return directoryPath;
     }
@@ -328,7 +330,7 @@ public class FileSystemStorageService(
 
     private async Task AddDirectoryToOwnerIndex(ClaimsPrincipal currentUser, DirectoryId directoryId)
     {
-        var ownerIndexDirectory = Path.Combine(_options.StoragePath, OwnerIndexFolderName);
+        var ownerIndexDirectory = Path.Combine(_options.Value.StoragePath, OwnerIndexFolderName);
         Directory.CreateDirectory(ownerIndexDirectory);
 
         var ownerIndexFilePath = Path.Combine(ownerIndexDirectory, $"{currentUser.Subject}{OwnerIndexFileExtension}");
