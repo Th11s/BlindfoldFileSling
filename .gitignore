@@ -7,3 +7,4 @@
 /.vs
 
 *.user
+/src/FileSling.Web/wwwroot/lib/font-awesome
