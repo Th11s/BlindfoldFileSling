@@ -19,7 +19,9 @@ builder.Services.AddAuthentication()
 #endif
 
         options.LogoutPath = "/logout";
+        options.EventsType = typeof(FileSlingCookieAuthenticationEvents);
     });
+builder.Services.AddScoped<FileSlingCookieAuthenticationEvents>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddAuthorizationBuilder()

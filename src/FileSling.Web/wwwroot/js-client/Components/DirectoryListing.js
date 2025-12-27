@@ -1,18 +1,24 @@
+import { addActivityIndicator } from './ActivityIndicator.js';
 export class DirectoryListing extends HTMLElement {
     connectedCallback() {
         const directoryId = this.getAttribute('directory-id');
         if (!directoryId) {
             throw 'Missing directory-id attribute';
         }
-        this.innerHTML = `<div>Loading directory listing ID: ${directoryId}...</div>`;
-        this.getFiles(directoryId);
+        addActivityIndicator(this);
+        this.getFiles(directoryId).then(() => this.render());
     }
     async getFiles(directoryId) {
         const response = await fetch(`/api/directory/${directoryId}`);
-        const files = await response.json();
-        this.innerHTML = `<div>Directory Listing for ID: ${directoryId}</div>`;
+        this.files = await response.json();
+    }
+    render() {
+        if (!this.files) {
+            this.innerHTML = `<div>No files found.</div>`;
+            return;
+        }
         const fileList = document.createElement('ul');
-        files.forEach((file) => {
+        this.files.forEach((file) => {
             const listItem = document.createElement('li');
             listItem.textContent = file.name;
             fileList.appendChild(listItem);

@@ -195,7 +195,7 @@ public class FileSystemStorageService(
 
 
 
-    public async Task<IEnumerable<DirectoryMetadata>> GetDirectories(ClaimsPrincipal currentUser)
+    public async Task<IEnumerable<DirectoryMetadata>> GetOwnedDirectories(ClaimsPrincipal currentUser)
     {
         // Read the index file for the current user
         var ownerIndexDirectory = Path.Combine(_options.Value.StoragePath, OwnerIndexFolderName);
