@@ -1,4 +1,4 @@
-import * as Utils from "./Utils.js";
+import * as Utils from "./Utils";
 
 export async function createCyptoKeyAndIV(): Promise<{ iv: Uint8Array, cryptoKey: CryptoKey }> {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));

@@ -6,7 +6,11 @@ using Th11s.FileSling.Web.Components;
 using Th11s.FileSling.Web.Endpoints;
 using Th11s.FileSling.Web.Security;
 
+using Vite.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddViteServices();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication()
@@ -55,5 +59,10 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>();
 app.MapFileSlingApi();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseViteDevelopmentServer(true);
+}
 
 app.Run();

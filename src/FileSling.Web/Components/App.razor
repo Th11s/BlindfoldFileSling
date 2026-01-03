@@ -1,5 +1,9 @@
 ﻿﻿<!DOCTYPE html>
+@using Vite.AspNetCore
 @inject IWebHostEnvironment _env
+@inject IViteDevServerStatus Vite
+@inject IViteManifest ViteManifest
+
 @inject NavigationManager Navigation
 @{
     var assemblyName = typeof(App).Assembly.GetName().Name;
@@ -7,7 +11,7 @@
     var baseUrl = new Uri(Navigation.BaseUri).AbsolutePath;
 }
 
-<html lang="@culture" loader-type="fullscreen">
+<html lang="@culture">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,6 +24,16 @@
 
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets[assemblyName + ".styles.css"]" />
+
+    @if (_env.IsDevelopment())
+    {
+        <script type="module" src="@Vite.ServerUrlWithBasePath/@@vite/client"></script>
+        <script type="module" src="@Vite.ServerUrlWithBasePath/App.ts"></script>
+    }
+    else
+    {
+        <script type="module" href="js-client/@ViteManifest["App.ts"]!.File"></script>
+    }
 
     <ImportMap />
     <HeadOutlet />

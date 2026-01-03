@@ -1,11 +1,11 @@
-import { DirectoryBrowser } from "./Components/DirectoryBrowser.js";
-import { DirectoryListing } from "./Components/DirectoryListing.js";
-import { DirectoryHeader } from "./Components/DirectoryHeader.js";
-import { ActivityIndicator } from "./Components/ActivityIndicator.js";
+import { DirectoryListWebComponent } from "./Components/DirectoryList.js";
+import { FileListWebComponent } from "./Components/FileList.js";
+import { FileListHeaderWebComponent } from "./Components/FileListHeader.js";
+import { FileUploadWebComponent } from "./Components/FileUpload.js";
 
 export default function registerComponents() {
-    customElements.define('th11s-activity-indicator', ActivityIndicator);
-    customElements.define('th11s-directory-browser', DirectoryBrowser);
-    customElements.define('th11s-directory-header', DirectoryHeader);
-    customElements.define('th11s-directory-listing', DirectoryListing);
+    customElements.define('th11s-directory-list', DirectoryListWebComponent);
+    customElements.define('th11s-file-list-header', FileListHeaderWebComponent);
+    customElements.define('th11s-file-list', FileListWebComponent);
+    customElements.define('th11s-file-upload', FileUploadWebComponent);
 }

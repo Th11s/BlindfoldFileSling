@@ -1,5 +1,5 @@
-import * as Utils from "./Utils.js";
-import * as Model from "./Model.js";
+import * as Utils from "./Utils";
+import * as Model from "./Model";
 
 async function openDatabase(): Promise<IDBDatabase> {
     const dbOpenRequest = window.indexedDB.open("FileSlingDB", 1);

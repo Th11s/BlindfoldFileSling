@@ -1,7 +1,7 @@
-import registerComponents from "./WebComponents.js";
-import * as Crypto from "./Crypto.js";
-import * as Utils from "./Utils.js";
-import * as ClientStorage from "./ClientStorage.js";
+import registerComponents from "./WebComponents";
+import * as Crypto from "./Crypto";
+import * as Utils from "./Utils";
+import * as ClientStorage from "./ClientStorage";
 
 import * as Model from "./Model.js";
 

@@ -8,3 +8,4 @@
 
 *.user
 /src/FileSling.Web/wwwroot/lib
+/src/FileSling.Web/node_modules

@@ -1,5 +1,5 @@
 {
-  "compileOnSave": true,
+  "compileOnSave": false,
   "include": [
     "typescript/*"
   ],
@@ -9,11 +9,14 @@
     "strict": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
 
     "outDir": "wwwroot/js-client"
   }
