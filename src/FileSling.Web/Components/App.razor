@@ -25,15 +25,7 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets[assemblyName + ".styles.css"]" />
 
-    @if (_env.IsDevelopment())
-    {
-        <script type="module" src="@Vite.ServerUrlWithBasePath/@@vite/client"></script>
-        <script type="module" src="@Vite.ServerUrlWithBasePath/App.ts"></script>
-    }
-    else
-    {
-        <script type="module" href="js-client/@ViteManifest["App.ts"]!.File"></script>
-    }
+    
 
     <ImportMap />
     <HeadOutlet />
@@ -54,6 +46,15 @@
 
     <Routes />
     <script src="_framework/blazor.web.js"></script>
-    <script defer src="@Assets["js-client/App.js"]" type="module"></script>
+    
+    @if (_env.IsDevelopment())
+    {
+        <script type="module" src="http://localhost:5173/@@vite/client"></script>
+        <script defer type="module" src="http://localhost:5173/App.ts"></script>
+    }
+    else
+    {
+        <script defer src="@Assets["js-client/main.js"]" type="module"></script>
+    }
 </body>
 </html>

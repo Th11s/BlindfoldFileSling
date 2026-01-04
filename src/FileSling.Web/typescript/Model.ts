@@ -32,14 +32,14 @@ export interface DirectoryMetadata {
 }
 
 export interface FileMetadata {
-    DirectoryId: string;
-    FileId: string;
+    directoryId: string;
+    fileId: string;
 
-    CreatedAt: Date;
-    DownloadCount: number;
-    FileSizeBytes: number;
+    createdAt: Date;
+    downloadCount: number;
+    fileSizeBytes: number;
 
     // Protected properties
-    FileName: string;
-    MimeType: string;
+    fileName: string;
+    mimeType: string;
 }
