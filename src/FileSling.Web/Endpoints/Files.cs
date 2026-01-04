@@ -1,4 +1,7 @@
 ﻿
+using Th11s.FileSling.Requests.Queries;
+using Th11s.FileSling.Services;
+
 namespace Th11s.FileSling.Web.Endpoints;
 
 internal static class Files
@@ -8,9 +11,14 @@ internal static class Files
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> Create(HttpContext context)
+    internal static async Task<IResult> Create(
+        string directoryId,
+        Requests.Commands.CreateFile command,
+        HttpContext context,
+        IFileStorage fileStorage)
     {
-        throw new NotImplementedException();
+        var metadata = await fileStorage.CreateFile(new (directoryId), command, context.User);
+        return TypedResults.Ok(metadata);
     }
 
     internal static async Task<IResult> Delete(HttpContext context)
@@ -28,8 +36,14 @@ internal static class Files
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> GetList(HttpContext context)
+    internal static async Task<IResult> GetList(
+        string directoryId, 
+        IFileStorage fileStorage)
     {
-        throw new NotImplementedException();
+        var files = await fileStorage.ListDirectoryContent(
+            new ListDirectory(new (directoryId))
+            );
+
+        return TypedResults.Ok(files);
     }
 }

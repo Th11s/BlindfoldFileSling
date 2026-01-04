@@ -1,14 +1,19 @@
 import * as Utils from "./Utils";
 import * as Model from "./Model";
 
+const DB_NAME = "FileSlingDB";
+const DB_VERSION = 1;
+const DIRECTORY_KEYS_STORE = "directoryKeys";
+const DIRECTORY_METADATA_STORE = "directoryMetadata";
+
 async function openDatabase(): Promise<IDBDatabase> {
-    const dbOpenRequest = window.indexedDB.open("FileSlingDB", 1);
+    const dbOpenRequest = window.indexedDB.open(DB_NAME, DB_VERSION);
     dbOpenRequest.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBRequest).result as IDBDatabase;
 
         if (event.newVersion! >= 1) {
-            db.createObjectStore("directoryKeys");
-            db.createObjectStore("directoryMetadata");
+            db.createObjectStore(DIRECTORY_KEYS_STORE);
+            db.createObjectStore(DIRECTORY_METADATA_STORE);
         }
     }
 
@@ -30,8 +35,8 @@ export async function storeDirectoryKey(directoryId: string, cryptoKey: CryptoKe
     const keyData = await window.crypto.subtle.exportKey("raw", cryptoKey);
     const base64Key = Utils.arrayBufferToBase64(keyData);
 
-    const tx = db.transaction("directoryKeys", "readwrite");
-    const store = tx.objectStore("directoryKeys");
+    const tx = db.transaction(DIRECTORY_KEYS_STORE, "readwrite");
+    const store = tx.objectStore(DIRECTORY_KEYS_STORE);
     store.put(base64Key, directoryId);
 
     await new Promise((resolve, reject) => {
@@ -43,8 +48,8 @@ export async function storeDirectoryKey(directoryId: string, cryptoKey: CryptoKe
 export async function storeDirectoryMetadata(directoryId: string, directoryMetadata: Model.DirectoryMetadata): Promise<void> {
     const db = await openDatabase();
 
-    const tx = db.transaction("directoryMetadata", "readwrite");
-    const store = tx.objectStore("directoryMetadata");
+    const tx = db.transaction(DIRECTORY_METADATA_STORE, "readwrite");
+    const store = tx.objectStore(DIRECTORY_METADATA_STORE);
     store.put(directoryMetadata, directoryId);
 
     await new Promise((resolve, reject) => {
@@ -56,8 +61,8 @@ export async function storeDirectoryMetadata(directoryId: string, directoryMetad
 export async function getDirectoryKey(directoryId: string): Promise<CryptoKey> {
     const db = await openDatabase();
 
-    const tx = db.transaction("directoryKeys", "readonly");
-    const store = tx.objectStore("directoryKeys");
+    const tx = db.transaction(DIRECTORY_KEYS_STORE, "readonly");
+    const store = tx.objectStore(DIRECTORY_KEYS_STORE);
     const getRequest = store.get(directoryId);
 
     const keyExport = await new Promise<string>((resolve, reject) => {
@@ -82,8 +87,8 @@ export async function getDirectoryKey(directoryId: string): Promise<CryptoKey> {
 export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadata> {
     const db = await openDatabase();
 
-    const tx = db.transaction("directoryKeys", "readonly");
-    const store = tx.objectStore("directoryKeys");
+    const tx = db.transaction(DIRECTORY_METADATA_STORE, "readonly");
+    const store = tx.objectStore(DIRECTORY_METADATA_STORE);
     const getRequest = store.get(directoryId);
 
     return await new Promise<Model.DirectoryMetadata>((resolve, reject) => {
@@ -105,8 +110,8 @@ export async function getDirectoryMetadata(directoryId: string): Promise<Model.D
 export async function getDirectories(): Promise<Model.DirectoryMetadata[]> {
     const db = await openDatabase();
 
-    const tx = db.transaction("directoryMetadata", "readonly");
-    const store = tx.objectStore("directoryMetadata");
+    const tx = db.transaction(DIRECTORY_METADATA_STORE, "readonly");
+    const store = tx.objectStore(DIRECTORY_METADATA_STORE);
     const getAllRequest = store.getAll();
 
     return await new Promise<Model.DirectoryMetadata[]>((resolve, reject) => {

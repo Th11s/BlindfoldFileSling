@@ -72,10 +72,10 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task RenameDirectory(ModifyDirectory command, ClaimsPrincipal currentUser)
+    public async Task RenameDirectory(DirectoryId directoryId, ModifyDirectory command, ClaimsPrincipal currentUser)
     {
         var metadata = await ReadMetadataFile<DirectoryMetadata>(
-            GetDirectoryPath(command.DirectoryId),
+            GetDirectoryPath(directoryId),
             DirectoryMetadataFileName
         );
 
@@ -85,17 +85,17 @@ public class FileSystemStorageService(
         };
 
         await UpdateMetadataFile(
-            GetDirectoryPath(command.DirectoryId),
+            GetDirectoryPath(directoryId),
             DirectoryMetadataFileName,
             metadata
         );
     }
 
 
-    public Task DeleteDirectory(DeleteDirectory command, ClaimsPrincipal currentUser)
+    public Task DeleteDirectory(DirectoryId directoryId, ClaimsPrincipal currentUser)
     {
         //TODO: There should be a deletion service to actually delete these later
-        var directoryPath = GetDirectoryPath(command.DirectoryId);
+        var directoryPath = GetDirectoryPath(directoryId);
         Directory.Move(directoryPath, directoryPath + DeletionMarkerExtension);
 
         return Task.CompletedTask;
@@ -106,10 +106,10 @@ public class FileSystemStorageService(
 
 
 
-    public async Task<FileMetadata> CreateFile(CreateFile command, ClaimsPrincipal currentUser)
+    public async Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command, ClaimsPrincipal currentUser)
     {
         var directoryMetadata = await ReadMetadataFile<DirectoryMetadata>(
-            GetDirectoryPath(command.DirectoryId),
+            GetDirectoryPath(directoryId),
             DirectoryMetadataFileName
         );
 
@@ -120,7 +120,7 @@ public class FileSystemStorageService(
         do
         {
             fileId = new FileId();
-            fileDirectoryPath = GetFileDirectoryPath(command.DirectoryId, fileId);
+            fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
         }
         while (Directory.Exists(fileDirectoryPath));
 
@@ -128,7 +128,7 @@ public class FileSystemStorageService(
 
         var metadata = new FileMetadata(
             fileId,
-            command.DirectoryId,
+            directoryId,
             currentUser.Subject,
             
             _timeProvider.GetUtcNow(),
@@ -256,7 +256,7 @@ public class FileSystemStorageService(
         var result = new List<FileMetadata>();
 
         var loaderTasks = new List<Task<FileMetadata>>();
-        foreach (var fileDirectoryPath in directoryPath.EnumerateDirectories($"*.{FileDirectoryExtension}", SearchOption.TopDirectoryOnly))
+        foreach (var fileDirectoryPath in directoryPath.EnumerateDirectories($"*{FileDirectoryExtension}", SearchOption.TopDirectoryOnly))
         {
             loaderTasks.Add(ReadMetadataFile<FileMetadata>(fileDirectoryPath.FullName, FileMetadataFileName));
         }

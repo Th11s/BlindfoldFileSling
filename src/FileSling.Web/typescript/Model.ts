@@ -31,6 +31,24 @@ export interface DirectoryMetadata {
     displayName: string;
 }
 
+export interface FileProtectedData {
+    fileName: string;
+    mimeType?: string;
+}
+
+export interface FileMetadataResponse {
+    directoryId: string;
+    fileId: string;
+
+    createdAt: Date;
+    downloadCount: number;
+    fileSizeBytes: number;
+
+    // Protected properties
+    encryptionHeader: string;
+    protectedData: string;
+}
+
 export interface FileMetadata {
     directoryId: string;
     fileId: string;
@@ -41,5 +59,5 @@ export interface FileMetadata {
 
     // Protected properties
     fileName: string;
-    mimeType: string;
+    mimeType?: string;
 }

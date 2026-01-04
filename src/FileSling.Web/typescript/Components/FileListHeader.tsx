@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
+import { getDirectoryMetadata } from "../DirectoryService";
+
 import { ActivityIndicator } from "./ActivityIndicator.js";
 import * as Model from "../Model.js"
 
@@ -14,11 +16,8 @@ function FileListHeader({ directoryId }: FileListHeaderProps) {
 
     React.useEffect(() => {
         async function fetchDirectoryMetadata() {
-            const response = await fetch(`/api/directory/${directoryId}/header`);
-            if (response.ok) {
-                const metadata = await response.json();
-                setDirectoryMetadata(metadata);
-            }
+            const metadata = await getDirectoryMetadata(directoryId);
+            setDirectoryMetadata(metadata);
             setLoading(false);
         }
 
@@ -34,13 +33,18 @@ function FileListHeader({ directoryId }: FileListHeaderProps) {
     }
 
     return (
-        <div className="directory-header">Directory Header Content</div>
+        <div className="directory-header">{directoryMetadata.displayName}</div>
     );
 }
 
 export class FileListHeaderWebComponent extends HTMLElement {
     connectedCallback() {
-        const directoryId = this.getAttribute("directory-id") || "";
+        const directoryId = this.getAttribute("directory-id");
+        if (!directoryId) {
+            console.error("directory-id was not present");
+            return;
+        }
+
         ReactDOM.createRoot(this).render(<FileListHeader directoryId={directoryId} />);
     }
 }

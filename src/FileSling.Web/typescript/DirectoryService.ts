@@ -5,14 +5,17 @@ import * as ClientStorage from "./ClientStorage";
 import * as HttpClient from "./HttpClient";
 
 export async function createDirectory(directoryName: string): Promise<void> {
-    const cryptoKeyAndIV = await CryptoHelper.createCyptoKeyAndIV();
+    const cryptoKey = await CryptoHelper.createCyptoKey();
+    const iv = CryptoHelper.createIV();
+
     const protectableData: Model.DirectoryProtectedData = {
         displayName: directoryName
     };
-    const protectedDataArray = await CryptoHelper.encryptStringifiedObject(protectableData, cryptoKeyAndIV);
-    const protectedData = Utils.arrayBufferToBase64(protectedDataArray);
 
-    const response = await HttpClient.createDirectory({ iv: cryptoKeyAndIV.iv, protectedData });
+    const protectedDataBuffer = await CryptoHelper.encryptStringifiedObject(protectableData, iv, cryptoKey);
+    const protectedData = Utils.arrayBufferToBase64(protectedDataBuffer);
+
+    const response = await HttpClient.createDirectory({ iv, protectedData });
 
     if (response.ok) {
         console.debug(`Folder "${directoryName}" created successfully.`);
@@ -29,16 +32,117 @@ export async function createDirectory(directoryName: string): Promise<void> {
             displayName: directoryName
         };
 
-        await ClientStorage.storeDirectoryKey(responseObject.directoryId, cryptoKeyAndIV.cryptoKey);
+        await ClientStorage.storeDirectoryKey(responseObject.directoryId, cryptoKey);
         await ClientStorage.storeDirectoryMetadata(responseObject.directoryId, metadata);
 
+        // TODO:
         // Events.raiseDirectoryCreated({ metadata });
     }
 }
 
-export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadata | null> {
-    return null;
+export async function createFileInDirectory(directoryId: string, file: File): Promise<void> {
+    const cryptoKey = await ClientStorage.getDirectoryKey(directoryId);
+    const iv = CryptoHelper.createIV();
+
+    const protectableData: Model.FileProtectedData = {
+        fileName: file.name,
+        mimeType: file.type
+    };
+
+    const protectedDataBuffer = await CryptoHelper.encryptStringifiedObject(protectableData, iv, cryptoKey);
+    const protectedData = Utils.arrayBufferToBase64(protectedDataBuffer);
+
+    const response = await HttpClient.createFile({directoryId, iv, protectedData });
+
+    if (response.ok) {
+        console.debug(`File "${file.name}" created successfully.`);
+        const responseObject = await response.json() as Model.FileMetadataResponse;
+        console.debug("File Metadata:", responseObject);
+
+        var metadata: Model.FileMetadata = {
+            directoryId: responseObject.directoryId,
+            fileId: responseObject.fileId,
+            createdAt: new Date(responseObject.createdAt),
+            downloadCount: responseObject.downloadCount,
+            fileSizeBytes: responseObject.fileSizeBytes,
+
+            fileName: file.name,
+            mimeType: file.type
+        };
+
+        // TODO
+        // Events.raiseFileCreated({ metadata });
+    }
 }
 
-export async function createFileInDirectory(directoryId: string, file: File): Promise<void> {
+export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadata | null> {
+    let metadata = await ClientStorage.getDirectoryMetadata(directoryId);
+    if (metadata) {
+        return metadata;
+    }
+
+    const directoryKey = await ClientStorage.getDirectoryKey(directoryId);
+    if (!directoryKey) {
+        return null;
+    }
+
+    const metadataResponse = await HttpClient.getDirectoryMetadata(directoryId);
+    if (!metadataResponse) {
+        return null;
+    }
+
+
+    const unprotectedData = await CryptoHelper.decryptAsObject<Model.DirectoryProtectedData>(
+        Utils.base64ToArrayBuffer(metadataResponse.protectedData),
+        Utils.base64ToUint8Array(metadataResponse.encryptionHeader),
+        directoryKey
+    );
+
+    metadata = {
+        directoryId,
+        displayName: unprotectedData.displayName,
+        createdAt: metadataResponse.createdAt,
+        expiresAt: metadataResponse.expiresAt,
+        lastFileUploadAt: metadataResponse.lastFileUploadAt,
+        maxStorageBytes: metadataResponse.maxStorageBytes,
+        usedStorageBytes: metadataResponse.usedStorageBytes
+    }
+
+    await ClientStorage.storeDirectoryMetadata(directoryId, metadata);
+    return metadata;
+}
+
+export async function getDirectoryFiles(directoryId: string): Promise<Model.FileMetadata[] | null> {
+    const directoryKey = await ClientStorage.getDirectoryKey(directoryId);
+    if (!directoryKey) {
+        return null;
+    }
+
+    const fileResponses = await HttpClient.getDirectoryFiles(directoryId);
+    if (!fileResponses) {
+        return null;
+    }
+
+    const result: Model.FileMetadata[] = [];
+    for (const fileResponse of fileResponses) {
+        const unprotectedData = await CryptoHelper.decryptAsObject<Model.FileProtectedData>(
+            Utils.base64ToArrayBuffer(fileResponse.protectedData),
+            Utils.base64ToUint8Array(fileResponse.encryptionHeader),
+            directoryKey
+        );
+
+        result.push({
+            directoryId,
+            fileId: fileResponse.fileId,
+
+            fileName: unprotectedData.fileName,
+            mimeType: unprotectedData.mimeType,
+
+            createdAt: fileResponse.createdAt,
+            downloadCount: fileResponse.downloadCount,
+            fileSizeBytes: fileResponse.fileSizeBytes
+        });
+    }
+
+    return result;
 }

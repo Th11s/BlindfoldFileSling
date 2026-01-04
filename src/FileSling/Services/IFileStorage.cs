@@ -9,10 +9,10 @@ namespace Th11s.FileSling.Services;
 public interface IFileStorage
 {
     Task<DirectoryMetadata> CreateDirectory(CreateDirectory command, ClaimsPrincipal currentUser, CancellationToken cancellationToken);
-    Task RenameDirectory(ModifyDirectory command, ClaimsPrincipal currentUser);
-    Task DeleteDirectory(DeleteDirectory command, ClaimsPrincipal currentUser);
+    Task RenameDirectory(DirectoryId directoryId, ModifyDirectory command, ClaimsPrincipal currentUser);
+    Task DeleteDirectory(DirectoryId directoryId, ClaimsPrincipal currentUser);
 
-    Task<FileMetadata> CreateFile(CreateFile command, ClaimsPrincipal currentUser);
+    Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command, ClaimsPrincipal currentUser);
     Task WriteFileChunk(WriteFileChunk command, ClaimsPrincipal currentUser);
     Task FinalizeFile(FinalizeFile command, ClaimsPrincipal currentUser);
     

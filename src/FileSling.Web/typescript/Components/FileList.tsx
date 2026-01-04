@@ -1,8 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import { ActivityIndicator } from "./ActivityIndicator.js";
-import * as Model from "../Model.js"
+import * as DirectoryService from "../DirectoryService";
+
+import { ActivityIndicator } from "./ActivityIndicator";
+import * as Model from "../Model"
 
 interface FileListProps {
     directoryId: string;
@@ -15,12 +17,9 @@ function FileList({ directoryId }: FileListProps) {
 
     React.useEffect(() => {
         async function fetchFiles() {
-            const response = await fetch(`/api/directory/${directoryId}`);
-            if (response.ok) {
-                const filesData = await response.json();
-                setFiles(filesData);
-                setLoading(false);
-            }
+            const files = await DirectoryService.getDirectoryFiles(directoryId);
+            setFiles(files || []);
+            setLoading(false);
         }
 
         fetchFiles();
@@ -47,7 +46,12 @@ function FileList({ directoryId }: FileListProps) {
 
 export class FileListWebComponent extends HTMLElement {
     connectedCallback() {
-        const directoryId = this.getAttribute("directory-id") || "";
+        const directoryId = this.getAttribute("directory-id");
+        if (!directoryId) {
+            console.error("directory-id was not present");
+            return;
+        }
+
         ReactDOM.createRoot(this).render(<FileList directoryId={directoryId} />);
     }
 }

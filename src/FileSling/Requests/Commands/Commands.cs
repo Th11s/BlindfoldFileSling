@@ -8,15 +8,10 @@ public record CreateDirectory(
 );
 
 public record ModifyDirectory(
-    DirectoryId DirectoryId,
     string ProtectedData
-);
-public record DeleteDirectory(
-    DirectoryId DirectoryId
 );
 
 public record CreateFile(
-    DirectoryId DirectoryId,
     long SizeInBytes,
     uint ChunkCount,
 
