@@ -1,3 +1,8 @@
+export interface EncryptedData {
+    encryptionHeader: string;
+    base64CipherText: string;
+}
+
 export interface DirectoryProtectedData {
     displayName: string;
 }
@@ -12,9 +17,7 @@ export interface DirectoryMetadataResponse {
     maxStorageBytes: number;
     usedStorageBytes: number;
 
-    // Protected properties
-    encryptionHeader: string;
-    protectedData: string;
+    encryptedData: EncryptedData;
 }
 
 export interface DirectoryMetadata {
@@ -44,9 +47,7 @@ export interface FileMetadataResponse {
     downloadCount: number;
     fileSizeBytes: number;
 
-    // Protected properties
-    encryptionHeader: string;
-    protectedData: string;
+    encryptedData: EncryptedData;
 }
 
 export interface FileMetadata {

@@ -1,35 +1,32 @@
-﻿using Th11s.FileSling.Model;
+﻿namespace Th11s.FileSling.Requests.Commands;
 
-namespace Th11s.FileSling.Requests.Commands;
+public record EncryptedData(
+    string EncryptionHeader,
+    string Base64CipherText
+);
 
 public record CreateDirectory(
-    string EncryptionHeader,
-    string ProtectedData
+    EncryptedData EncryptedData
 );
 
 public record ModifyDirectory(
-    string ProtectedData
+    EncryptedData EncryptedData
 );
 
 public record CreateFile(
     long SizeInBytes,
     uint ChunkCount,
 
-    string ProtectedData
+    EncryptedData EncryptedData
+);
+
+public record EncryptedStream(
+    string EncryptionHeader,
+    Stream CipherStream
 );
 
 public record WriteFileChunk(
-    DirectoryId DirectoryId,
-    FileId FileId,
-
     uint ChunkNumber,
-    Stream Data
+
+    EncryptedStream EncryptedStream
 );
-
-public record FinalizeFile(
-    DirectoryId DirectoryId,
-    FileId FileId);
-
-public record DeleteFile(
-    DirectoryId DirectoryId,
-    FileId FileId);

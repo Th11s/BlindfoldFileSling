@@ -1,3 +1,6 @@
+import { EncryptedData } from "./Model";
+import * as Util from "./Utils";
+
 export async function createCyptoKey(): Promise<CryptoKey> {
     const aesKey = await window.crypto.subtle.generateKey(
         {
@@ -50,7 +53,15 @@ export async function decryptAsString(cypherData: ArrayBuffer, iv: Uint8Array, c
     return clearText;
 }
 
-export async function decryptAsObject<T>(cypherData: ArrayBuffer, iv: Uint8Array, cryptoKey: CryptoKey): Promise<T> {
+async function decryptAsObjectInternal<T>(cypherData: ArrayBuffer, iv: Uint8Array, cryptoKey: CryptoKey): Promise<T> {
     const clearText = await decryptAsString(cypherData, iv, cryptoKey);
     return JSON.parse(clearText) as T;
+}
+
+export function decryptAsObject<T>(encryptedData: EncryptedData, cryptoKey: CryptoKey): Promise<T> {
+    return decryptAsObjectInternal(
+        Util.base64ToArrayBuffer(encryptedData.base64CipherText),
+        Util.base64ToUint8Array(encryptedData.encryptionHeader),
+        cryptoKey
+    );
 }

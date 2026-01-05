@@ -9,5 +9,5 @@ public record FileMetadata(
     long SizeBytes,
     int? DownloadCount,
 
-    byte[] Protected
+    EncryptedMetadata EncryptedData
 );

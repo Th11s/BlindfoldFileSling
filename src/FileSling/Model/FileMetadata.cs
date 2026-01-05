@@ -11,5 +11,5 @@ public record FileMetadata(
     uint ChunkCount,
     int DownloadCount,
 
-    string Protected // Expected to be a base64url-encoded string
+    ProtectedMetadata Protected
 );

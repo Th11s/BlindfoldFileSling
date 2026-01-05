@@ -37,7 +37,7 @@ function FileList({ directoryId }: FileListProps) {
         <ul>
             {files.map(file => (
                 <li key={file.fileId}>
-                    <a href={`file/${file.fileId}`}>{file.fileName}</a>
+                    <a href={`file/${file.directoryId}/${file.fileId}`}>{file.fileName}</a>
                 </li>
             ))}
         </ul>

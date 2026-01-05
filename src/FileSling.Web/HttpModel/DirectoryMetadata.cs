@@ -9,5 +9,5 @@ public record DirectoryMetadata(
     long MaxStorageBytes,
     long UsedStorageBytes,
 
-    string Protected
+    EncryptedMetadata EncryptedData
 );

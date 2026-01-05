@@ -15,7 +15,7 @@ export async function createDirectory(directoryName: string): Promise<void> {
     const protectedDataBuffer = await CryptoHelper.encryptStringifiedObject(protectableData, iv, cryptoKey);
     const protectedData = Utils.arrayBufferToBase64(protectedDataBuffer);
 
-    const response = await HttpClient.createDirectory({ iv, protectedData });
+    const response = await HttpClient.createDirectory({ encryptedData: { encryptionHeader: Utils.arrayBufferToBase64(iv), base64CipherText: protectedData } });
 
     if (response.ok) {
         console.debug(`Folder "${directoryName}" created successfully.`);
@@ -52,7 +52,7 @@ export async function createFileInDirectory(directoryId: string, file: File): Pr
     const protectedDataBuffer = await CryptoHelper.encryptStringifiedObject(protectableData, iv, cryptoKey);
     const protectedData = Utils.arrayBufferToBase64(protectedDataBuffer);
 
-    const response = await HttpClient.createFile({directoryId, iv, protectedData });
+    const response = await HttpClient.createFile(directoryId, { encryptedData: { encryptionHeader: Utils.arrayBufferToBase64(iv), base64CipherText: protectedData } });
 
     if (response.ok) {
         console.debug(`File "${file.name}" created successfully.`);
@@ -93,8 +93,7 @@ export async function getDirectoryMetadata(directoryId: string): Promise<Model.D
 
 
     const unprotectedData = await CryptoHelper.decryptAsObject<Model.DirectoryProtectedData>(
-        Utils.base64ToArrayBuffer(metadataResponse.protectedData),
-        Utils.base64ToUint8Array(metadataResponse.encryptionHeader),
+        metadataResponse.encryptedData,
         directoryKey
     );
 
@@ -126,8 +125,7 @@ export async function getDirectoryFiles(directoryId: string): Promise<Model.File
     const result: Model.FileMetadata[] = [];
     for (const fileResponse of fileResponses) {
         const unprotectedData = await CryptoHelper.decryptAsObject<Model.FileProtectedData>(
-            Utils.base64ToArrayBuffer(fileResponse.protectedData),
-            Utils.base64ToUint8Array(fileResponse.encryptionHeader),
+            fileResponse.encryptedData,
             directoryKey
         );
 

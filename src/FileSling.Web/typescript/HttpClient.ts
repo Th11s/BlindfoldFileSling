@@ -1,9 +1,7 @@
-import * as Utils from "./Utils";
 import * as Model from "./Model";
 
 interface CreateDirectoryCommand {
-    iv: ArrayBuffer;
-    protectedData: string;
+    encryptedData: Model.EncryptedData;
 }
 
 export async function createDirectory(command: CreateDirectoryCommand) : Promise<Response> {
@@ -12,29 +10,21 @@ export async function createDirectory(command: CreateDirectoryCommand) : Promise
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            encryptionHeader: Utils.arrayBufferToBase64(command.iv),
-            protectedData: command.protectedData
-        })
+        body: JSON.stringify(command)
     });
 }
 
 interface CreateFileCommand {
-    directoryId: string;
-    iv: ArrayBuffer;
-    protectedData: string;
+    encryptedData: Model.EncryptedData;
 }
 
-export async function createFile(command: CreateFileCommand): Promise<Response> {
-    return fetch(`api/file/${command.directoryId}`, {
+export async function createFile(directoryId: string, command: CreateFileCommand): Promise<Response> {
+    return fetch(`api/file/${directoryId}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            encryptionHeader: Utils.arrayBufferToBase64(command.iv),
-            protectedData: command.protectedData
-        })
+        body: JSON.stringify(command)
     });
 }
 

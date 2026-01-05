@@ -7,7 +7,6 @@ using Th11s.FileSling.Configuration;
 using Th11s.FileSling.Extensions;
 using Th11s.FileSling.Model;
 using Th11s.FileSling.Requests.Commands;
-using Th11s.FileSling.Requests.Queries;
 
 namespace Th11s.FileSling.Services;
 
@@ -19,10 +18,10 @@ public class FileSystemStorageService(
     private const string DirectoryMetadataFileName = "_directory.json";
     private const string FileMetadataFileName = "_file.json";
 
-    private const string FileDirectoryExtension = ".file";
+    private const string FileDirectoryExtension = "file";
 
-    private const string ChunkFileExtension = ".part";
-    private const string DeletionMarkerExtension = ".deleted";
+    private const string ChunkFileExtension = "part";
+    private const string DeletionMarkerExtension = "deleted";
     private const string PartialFileMarkerName = "_partial";
 
     private const string OwnerIndexFolderName = "_owners";
@@ -58,9 +57,10 @@ public class FileSystemStorageService(
 
             currentUser.DirectoryQuota ?? _options.Value.DefaultDirectoryQuotaBytes,
             0,
-
-            command.EncryptionHeader,
-            command.ProtectedData
+            new(
+                command.EncryptedData.EncryptionHeader,
+                command.EncryptedData.Base64CipherText
+            )
         );
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -81,7 +81,10 @@ public class FileSystemStorageService(
 
         metadata = metadata with
         {
-            Protected = command.ProtectedData
+            Protected = new(
+                command.EncryptedData.EncryptionHeader,
+                command.EncryptedData.Base64CipherText
+            )
         };
 
         await UpdateMetadataFile(
@@ -96,7 +99,7 @@ public class FileSystemStorageService(
     {
         //TODO: There should be a deletion service to actually delete these later
         var directoryPath = GetDirectoryPath(directoryId);
-        Directory.Move(directoryPath, directoryPath + DeletionMarkerExtension);
+        Directory.Move(directoryPath, directoryPath + "." + DeletionMarkerExtension);
 
         return Task.CompletedTask;
     }
@@ -137,7 +140,10 @@ public class FileSystemStorageService(
             command.ChunkCount,
             0,
 
-            command.ProtectedData
+            new ProtectedMetadata(
+                command.EncryptedData.EncryptionHeader,
+                command.EncryptedData.Base64CipherText
+            )
         );
 
         await UpdateMetadataFile(
@@ -154,40 +160,40 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task WriteFileChunk(WriteFileChunk command, ClaimsPrincipal currentUser)
+    public async Task WriteFileChunk(DirectoryId directoryId, FileId fileId, WriteFileChunk command, ClaimsPrincipal currentUser)
     {
-        if(!Directory.Exists(GetFileDirectoryPath(command.DirectoryId, command.FileId)))
+        if(!Directory.Exists(GetFileDirectoryPath(directoryId, fileId)))
         {
             throw new InvalidOperationException("File does not exist.");
         }
 
-        if(!PartialFileMarkerExists(GetFileDirectoryPath(command.DirectoryId, command.FileId)))
+        if(!PartialFileMarkerExists(GetFileDirectoryPath(directoryId, fileId)))
         {
             throw new InvalidOperationException("Cannot write chunk to finalized file.");
         }
 
 
 
-        var filePath = GetChunkFilePath(command.DirectoryId, command.FileId, command.ChunkNumber);
+        var filePath = GetChunkFilePath(directoryId, fileId, command.ChunkNumber);
 
         using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-        await command.Data.CopyToAsync(fileStream);
+        await command.EncryptedStream.CipherStream.CopyToAsync(fileStream);
         await fileStream.FlushAsync();
     }
 
 
-    public Task DeleteFile(DeleteFile command, ClaimsPrincipal currentUser)
+    public Task DeleteFile(DirectoryId directoryId, FileId fileId, ClaimsPrincipal currentUser)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(command.DirectoryId, command.FileId);
+        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
         var deletedFilePath = Path.ChangeExtension(fileDirectoryPath, DeletionMarkerExtension);
 
         Directory.Move(fileDirectoryPath, deletedFilePath);
         return Task.CompletedTask;
     }
 
-    public Task FinalizeFile(FinalizeFile command, ClaimsPrincipal currentUser)
+    public Task FinalizeFile(DirectoryId directoryId, FileId fileId, ClaimsPrincipal currentUser)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(command.DirectoryId, command.FileId);
+        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
         DeletePartialFileMarker(fileDirectoryPath);
 
         return Task.CompletedTask;
@@ -241,22 +247,22 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task<DirectoryMetadata> GetDirectory(GetDirectory query)
+    public async Task<DirectoryMetadata> GetDirectory(DirectoryId directoryId)
     {
-        var directoryPath = GetDirectoryPath(query.DirectoryId);
+        var directoryPath = GetDirectoryPath(directoryId);
         var metadata = await ReadMetadataFile<DirectoryMetadata>(directoryPath, DirectoryMetadataFileName);
         return metadata;
     }
 
 
-    public async Task<IEnumerable<FileMetadata>> ListDirectoryContent(ListDirectory query)
+    public async Task<IEnumerable<FileMetadata>> ListDirectoryContent(DirectoryId directoryId)
     {
         // enumerate files in directory
-        var directoryPath = new DirectoryInfo(GetDirectoryPath(query.DirectoryId));
+        var directoryPath = new DirectoryInfo(GetDirectoryPath(directoryId));
         var result = new List<FileMetadata>();
 
         var loaderTasks = new List<Task<FileMetadata>>();
-        foreach (var fileDirectoryPath in directoryPath.EnumerateDirectories($"*{FileDirectoryExtension}", SearchOption.TopDirectoryOnly))
+        foreach (var fileDirectoryPath in directoryPath.EnumerateDirectories($"*.{FileDirectoryExtension}", SearchOption.TopDirectoryOnly))
         {
             loaderTasks.Add(ReadMetadataFile<FileMetadata>(fileDirectoryPath.FullName, FileMetadataFileName));
         }
@@ -277,9 +283,9 @@ public class FileSystemStorageService(
     }
 
 
-    public Task<Stream> GetFileChunk(GetFile query, ClaimsPrincipal currentUser)
+    public Task<Stream> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber, ClaimsPrincipal currentUser)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(query.DirectoryId, query.FileId);
+        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
 
         // Check if the file is finalized
         if (PartialFileMarkerExists(fileDirectoryPath))
@@ -288,7 +294,7 @@ public class FileSystemStorageService(
         }
 
         // get chunk file path
-        var chunkFilePath = GetChunkFilePath(query.DirectoryId, query.FileId, query.ChunkNumber);
+        var chunkFilePath = GetChunkFilePath(directoryId, fileId, chunkNumber);
         var fileStream = new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         return Task.FromResult<Stream>(fileStream);
     }
@@ -304,7 +310,7 @@ public class FileSystemStorageService(
     private string GetFileDirectoryPath(DirectoryId directoryId, FileId fileId)
     {
         var directoryPath = GetDirectoryPath(directoryId);
-        var filePath = Path.Combine(directoryPath, $"{fileId.Value}{FileDirectoryExtension}");
+        var filePath = Path.Combine(directoryPath, $"{fileId.Value}.{FileDirectoryExtension}");
         return filePath;
     }
 
