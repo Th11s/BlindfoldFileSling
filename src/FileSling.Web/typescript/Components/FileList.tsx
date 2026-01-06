@@ -34,13 +34,13 @@ function FileList({ directoryId }: FileListProps) {
     }
 
     return (
-        <ul>
+        <div className="file-list">
             {files.map(file => (
-                <li key={file.fileId}>
+                <div className="file-item" key={file.fileId}>
                     <a href={`file/${file.directoryId}/${file.fileId}`}>{file.fileName}</a>
-                </li>
+                </div>
             ))}
-        </ul>
+        </div>
     );
 }
 

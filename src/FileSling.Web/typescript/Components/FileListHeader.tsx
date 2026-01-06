@@ -33,7 +33,7 @@ function FileListHeader({ directoryId }: FileListHeaderProps) {
     }
 
     return (
-        <div className="directory-header">{directoryMetadata.displayName}</div>
+        <div className="file-list-header">{directoryMetadata.displayName}</div>
     );
 }
 

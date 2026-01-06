@@ -27,13 +27,16 @@ function DirectoryList() {
     }
 
     return (
-        <ul>
+        <div className="directory-grid">
             {directories.map(dir => (
-                <li key={dir.directoryId}>
-                    <a href={`ls/${dir.directoryId}`}>{dir.displayName}</a>
-                </li>
+                <a className="directory-item" key={dir.directoryId} href={`ls/${dir.directoryId}`}>
+                    <h2>{dir.displayName}</h2>
+                    <div>{dir.createdAt.toLocaleString()} - {dir.expiresAt?.toLocaleString()}</div>
+                    <div>{dir.lastFileUploadAt?.toLocaleString()}</div>
+                    <div>{dir.usedStorageBytes} / {dir.maxStorageBytes}</div>
+                </a>
             ))}
-        </ul>
+        </div>
     );
 }
 

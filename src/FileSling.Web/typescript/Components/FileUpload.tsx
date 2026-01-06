@@ -38,7 +38,7 @@ function FileUpload({ directoryId }: FileUploadProps) {
     };
 
     return (
-        <div>
+        <div className="file-upload-container">
             <div
                 onDrop={onDrop}
                 onDragOver={onDragOver}

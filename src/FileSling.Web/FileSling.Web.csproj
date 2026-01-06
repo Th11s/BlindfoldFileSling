@@ -9,10 +9,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Vite.AspNetCore" Version="2.4.1" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\FileSling\FileSling.csproj" />
 	</ItemGroup>
 
