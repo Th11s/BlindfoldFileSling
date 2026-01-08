@@ -1,8 +1,8 @@
 {
   "compileOnSave": false,
   "include": [
-    "typescript/*"
-, "typescript/Components/WebComponents.ts"  ],
+    "typescript/*" 
+  ],
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",

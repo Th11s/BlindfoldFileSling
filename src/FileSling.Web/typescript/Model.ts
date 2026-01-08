@@ -3,35 +3,39 @@ export interface EncryptedData {
     base64CipherText: string;
 }
 
+export interface EncryptedChallenge extends EncryptedData {
+    clearTextChallenge: string;
+}
+
 export interface DirectoryProtectedData {
     displayName: string;
 }
 
-export interface DirectoryMetadataResponse {
+interface DirectoryMetadataBase {
     directoryId: string;
 
-    createdAt: Date;
-    expiresAt?: Date | null;
-    lastFileUploadAt?: Date | null;
+    createdAt: string;
+    expiresAt: string;
+    lastFileUploadAt: string;
 
-    maxStorageBytes: number;
-    usedStorageBytes: number;
+    maxStorageSpace: string;
+    usedStorageSpace: string;
+}
 
+export interface DirectoryMetadataResponse extends DirectoryMetadataBase {
     encryptedData: EncryptedData;
 }
 
-export interface DirectoryMetadata {
+export interface DirectoryMetadata extends DirectoryMetadataBase, DirectoryProtectedData {
+}
+
+interface FileMetadataBase {
     directoryId: string;
+    fileId: string;
 
-    createdAt: Date;
-    expiresAt?: Date | null;
-    lastFileUploadAt?: Date | null;
-
-    maxStorageBytes: number;
-    usedStorageBytes: number;
-
-    // Protected properties
-    displayName: string;
+    createdAt: string;
+    downloadCount: number;
+    fileSize: string;
 }
 
 export interface FileProtectedData {
@@ -39,26 +43,9 @@ export interface FileProtectedData {
     mimeType?: string;
 }
 
-export interface FileMetadataResponse {
-    directoryId: string;
-    fileId: string;
-
-    createdAt: Date;
-    downloadCount: number;
-    fileSizeBytes: number;
-
+export interface FileMetadataResponse extends FileMetadataBase {
     encryptedData: EncryptedData;
 }
 
-export interface FileMetadata {
-    directoryId: string;
-    fileId: string;
-
-    createdAt: Date;
-    downloadCount: number;
-    fileSizeBytes: number;
-
-    // Protected properties
-    fileName: string;
-    mimeType?: string;
+export interface FileMetadata extends FileMetadataBase, FileProtectedData {
 }

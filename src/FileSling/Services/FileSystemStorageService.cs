@@ -52,7 +52,7 @@ public class FileSystemStorageService(
             currentUser.Subject,
 
             _timeProvider.GetUtcNow(),
-            default,
+            _timeProvider.GetUtcNow() + _options.Value.DefaultRelativeDirectoryExpiry,
             default,
 
             currentUser.DirectoryQuota ?? _options.Value.DefaultDirectoryQuotaBytes,

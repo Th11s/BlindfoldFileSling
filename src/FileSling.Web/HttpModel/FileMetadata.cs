@@ -4,9 +4,9 @@ public record FileMetadata(
     string FileId,
     string DirectoryId,
 
-    DateTimeOffset CreatedAt,
+    string CreatedAt,
 
-    long SizeBytes,
+    string FileSize,
     int? DownloadCount,
 
     EncryptedMetadata EncryptedData

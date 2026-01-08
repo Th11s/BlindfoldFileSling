@@ -1,4 +1,4 @@
-import { EncryptedData } from "./Model";
+import { EncryptedData, EncryptedChallenge } from "./Model";
 import * as Util from "./Utils";
 
 export async function createCyptoKey(): Promise<CryptoKey> {
@@ -14,11 +14,12 @@ export async function createCyptoKey(): Promise<CryptoKey> {
     return aesKey;
 }
 
-export function createIV(): Uint8Array {
-    return window.crypto.getRandomValues(new Uint8Array(12));
+export function createIV() {
+    const iv: Uint8Array<ArrayBuffer> = new Uint8Array(12);
+    return window.crypto.getRandomValues(iv);
 }
 
-export async function encryptString(clearText: string, iv: Uint8Array, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
+export async function encryptString(clearText: string, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();
     const data = encoder.encode(clearText);
 
@@ -32,12 +33,12 @@ export async function encryptString(clearText: string, iv: Uint8Array, cryptoKey
     );
 }
 
-export function encryptStringifiedObject<T>(obj: T, iv: Uint8Array, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
+export function encryptStringifiedObject<T>(obj: T, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
     const json = JSON.stringify(obj);
     return encryptString(json, iv, cryptoKey);
 }
 
-export async function decryptAsString(cypherData: ArrayBuffer, iv: Uint8Array, cryptoKey: CryptoKey) : Promise<string> {
+export async function decryptAsString(cypherData: ArrayBuffer, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey) : Promise<string> {
     const clearTextBuffer = await window.crypto.subtle.decrypt(
         {
             name: "AES-GCM",
@@ -53,7 +54,7 @@ export async function decryptAsString(cypherData: ArrayBuffer, iv: Uint8Array, c
     return clearText;
 }
 
-async function decryptAsObjectInternal<T>(cypherData: ArrayBuffer, iv: Uint8Array, cryptoKey: CryptoKey): Promise<T> {
+async function decryptAsObjectInternal<T>(cypherData: ArrayBuffer, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<T> {
     const clearText = await decryptAsString(cypherData, iv, cryptoKey);
     return JSON.parse(clearText) as T;
 }
@@ -64,4 +65,21 @@ export function decryptAsObject<T>(encryptedData: EncryptedData, cryptoKey: Cryp
         Util.base64ToUint8Array(encryptedData.encryptionHeader),
         cryptoKey
     );
+}
+
+export async function createChallenge(cryptoKey: CryptoKey): Promise<EncryptedChallenge> {
+    const challenge = window.crypto.getRandomValues(new Uint8Array(32));
+    const plainChallengeString = Util.uInt8ArrayToBase64(challenge);
+
+    const challengeIV = createIV();
+
+    const cipherString = await encryptString(plainChallengeString, challengeIV, cryptoKey);
+    const base64CipherText = Util.arrayBufferToBase64(cipherString);
+
+    return {
+        encryptionHeader: Util.uInt8ArrayToBase64(challengeIV),
+        base64CipherText: base64CipherText,
+        clearTextChallenge: plainChallengeString
+    }
+
 }

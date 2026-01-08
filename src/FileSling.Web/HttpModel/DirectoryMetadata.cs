@@ -2,12 +2,12 @@
 
 public record DirectoryMetadata(
     string DirectoryId,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? ExpiresAt,
-    DateTimeOffset? LastFileUploadAt,
+    string CreatedAt,
+    string? ExpiresAt,
+    string? LastFileUploadAt,
 
-    long MaxStorageBytes,
-    long UsedStorageBytes,
+    string MaxStorageSpace,
+    string UsedStorageSpace,
 
     EncryptedMetadata EncryptedData
 );

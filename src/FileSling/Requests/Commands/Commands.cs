@@ -5,8 +5,15 @@ public record EncryptedData(
     string Base64CipherText
 );
 
+public record EncryptedChallenge(
+    string EncryptionHeader, 
+    string Base64CipherText,
+    string ClearTextChallenge
+) : EncryptedData(EncryptionHeader, Base64CipherText);
+
 public record CreateDirectory(
-    EncryptedData EncryptedData
+    EncryptedData EncryptedData,
+    EncryptedChallenge OwnerChallenge
 );
 
 public record ModifyDirectory(

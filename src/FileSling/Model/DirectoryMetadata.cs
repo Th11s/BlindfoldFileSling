@@ -5,7 +5,7 @@ public record DirectoryMetadata(
     OwnerId OwnerId,
 
     DateTimeOffset CreatedAt,
-    DateTimeOffset? ExpiresAt,
+    DateTimeOffset ExpiresAt,
     DateTimeOffset? LastFileUploadAt,
 
     long MaxStorageBytes,

@@ -2,6 +2,7 @@ import * as Model from "./Model";
 
 interface CreateDirectoryCommand {
     encryptedData: Model.EncryptedData;
+    ownerChallenge: Model.EncryptedChallenge;
 }
 
 export async function createDirectory(command: CreateDirectoryCommand) : Promise<Response> {

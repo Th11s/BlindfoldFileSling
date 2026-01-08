@@ -8,6 +8,8 @@ using Th11s.FileSling.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication()
     .AddCookie(options =>
@@ -48,6 +50,7 @@ var app = builder.Build();
 app.MapStaticAssets()
     .ShortCircuit();
 
+app.UseRequestLocalization();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

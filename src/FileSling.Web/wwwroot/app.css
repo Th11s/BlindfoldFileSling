@@ -40,7 +40,7 @@ p {
 :root {
     color-scheme: light dark;
     --text-color: light-dark(#151518, #faf9f6);
-    --accent-color: light-dark(#f2ab1c, #f2ab1c);
+    --accent-color: light-dark(#d5920c, #f2ab1c);
     --background-color: light-dark(#faf9f6, #151518);
     /* Font size */
     --font-size: 16px;
@@ -61,43 +61,94 @@ body {
     background-color: var(--background-color);
 }
 
-.directory-grid {
-    --column-count: 1;
-
-    @media (min-width: 768px) {
-        --column-count: 2;
-    }
-
-    @media (min-width: 992px) {
-        --column-count: 3;
-    }
-
-    @media (min-width: 1200px) {
-        --column-count: 4;
-    }
-
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(var(--column-count), 1fr);
+.directory-list {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--accent-color);
 
     .directory-item {
-        display: block;
+        display: grid;
         color: inherit;
         text-decoration: inherit;
+        background-color: var(--background-color);
+        border-bottom: 1px solid var(--accent-color);
+        padding: 0.25rem 0.5rem;
+        column-gap: 0.5rem;
+        grid-template-areas:
+            "icon name"
+            "icon dates"
+            "icon last-upload"
+            "icon disk-space";
+        grid-template-columns: auto 1fr;
+
+        @container (min-width: 600px) {
+            grid-template-areas:
+                "icon name disk-space"
+                "icon dates last-upload";
+            grid-template-columns: auto 1fr 1fr;
+            align-items: center;
+        }
+
+        @container (min-width: 900px) {
+            grid-template-areas: "icon name dates last-upload disk-space";
+            grid-template-columns: auto 2fr 1fr 1fr 1fr;
+        }
+
+        ) .icon {
+            grid-area: icon;
+            align-self: center;
+            justify-self: center;
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .name {
+            grid-area: name;
+            color: var(--accent-color);
+            line-height: 1.1;
+        }
+
+        .dates {
+            grid-area: dates;
+        }
+
+        .last-upload {
+            grid-area: last-upload;
+        }
+
+        .disk-space {
+            grid-area: disk-space;
+        }
+
+        &.owned {
+        }
+
+        &:nth-child(even) {
+            filter: brightness(95%);
+        }
+
+        &:hover {
+            .name {
+                text-decoration: underline;
+            }
+
+            filter: brightness(90%);
+            cursor: pointer;
+        }
     }
 }
 
-.file-list-header {
-    font-weight: bold;
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 0.25rem;
-}
-
-.file-list {
-    .file-item {
+    .file-list-header {
+        font-weight: bold;
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 0.25rem;
     }
-}
 
-.file-upload-container {
-    padding-block: 0.5rem;
-}
+    .file-list {
+        .file-item {
+        }
+    }
+
+    .file-upload-container {
+        padding-block: 0.5rem;
+    }

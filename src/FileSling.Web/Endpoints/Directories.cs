@@ -1,10 +1,15 @@
 ﻿using System.Security.Claims;
 
-using Microsoft.AspNetCore.Http.HttpResults;
-using static Microsoft.AspNetCore.Http.TypedResults;
-
-using Th11s.FileSling.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Localization;
+
+using Th11s.FileSling.Model;
+using Th11s.FileSling.Services;
+using Th11s.FileSling.Web.Extensions;
+using Th11s.FileSling.Web.Resources;
+
+using static Microsoft.AspNetCore.Http.TypedResults;
 
 namespace Th11s.FileSling.Web.Endpoints;
 
@@ -18,7 +23,8 @@ internal static class Directories
 
     internal static async Task<Results<Ok<HttpModel.DirectoryMetadata>, NotFound>> Get(
         string directoryId,
-        IFileStorage storage
+        IFileStorage storage,
+        IStringLocalizer<SharedResources> localizer
         )
     {
         var directory = await storage.GetDirectory(new(new(directoryId)));
@@ -27,18 +33,7 @@ internal static class Directories
             return NotFound();
         }
 
-        var httpResult = new HttpModel.DirectoryMetadata(
-            directory.Id.Value,
-            directory.CreatedAt,
-            directory.ExpiresAt,
-            directory.LastFileUploadAt,
-            directory.MaxStorageBytes,
-            directory.UsedStorageBytes,
-            new(
-                directory.Protected.EncryptionHeader,
-                directory.Protected.Base64CipherText
-            )
-        );
+        var httpResult = directory.ToHttpModel(localizer);
 
         return Ok(httpResult);
     }
@@ -47,22 +42,12 @@ internal static class Directories
         Requests.Commands.CreateDirectory command,
         IFileStorage fileStorage,
         ClaimsPrincipal currentUser,
+        IStringLocalizer<SharedResources> localizer,
         HttpContext context,
         CancellationToken cancellationToken)
     {
         var directory = await fileStorage.CreateDirectory(command, currentUser, cancellationToken);
-        var httpResult = new HttpModel.DirectoryMetadata(
-            directory.Id.Value,
-            directory.CreatedAt,
-            directory.ExpiresAt,
-            directory.LastFileUploadAt,
-            directory.MaxStorageBytes,
-            directory.UsedStorageBytes,
-            new(
-                directory.Protected.EncryptionHeader,
-                directory.Protected.Base64CipherText
-            )
-        );
+        var httpResult = directory.ToHttpModel(localizer);
 
         await context.SignInAsync(currentUser);
         return Ok(httpResult);
@@ -78,4 +63,22 @@ internal static class Directories
         return Results.Ok($"Delete Directory Endpoint for {directoryId}");
     }
 
+    extension(DirectoryMetadata directory)
+    {
+        public HttpModel.DirectoryMetadata ToHttpModel(IStringLocalizer lr)
+        {
+            return new HttpModel.DirectoryMetadata(
+                directory.Id.Value,
+                directory.CreatedAt.ToString("r"),
+                directory.ExpiresAt.ToString("r"),
+                directory.LastFileUploadAt?.ToString("r") ?? lr["LastFileUpload.Never"],
+                directory.MaxStorageBytes.ToReadableFileSize(),
+                directory.UsedStorageBytes.ToReadableFileSize(),
+                new(
+                    directory.Protected.EncryptionHeader,
+                    directory.Protected.Base64CipherText
+                )
+            );
+        }
+    }
 }

@@ -12,4 +12,9 @@
 	  <ProjectReference Include="..\FileSling\FileSling.csproj" />
 	</ItemGroup>
 
+	<Target Name="ViteBuild" BeforeTargets="Build">
+		<Exec Command="npm install" WorkingDirectory="$(ProjectDir)" />
+		<Exec Command="npm run ts-check" WorkingDirectory="$(ProjectDir)" />
+		<Exec Command="npm run build" WorkingDirectory="$(ProjectDir)" />
+	</Target>
 </Project>

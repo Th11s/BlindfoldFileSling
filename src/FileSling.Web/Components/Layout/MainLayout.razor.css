@@ -20,4 +20,16 @@
     width: var(--wrapper-width);
     justify-self: center;
     padding: var(--padding-y) var(--padding-x);
+    
+    container-type: inline-size;
+}
+
+.logo {
+    h1 {
+        text-align: justify-all;
+    }
+}
+
+.wrapper > ::deep * {
+    margin-bottom: 1rem;
 }

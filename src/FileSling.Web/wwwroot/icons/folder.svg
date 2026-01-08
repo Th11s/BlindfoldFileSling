@@ -1,0 +1,23 @@
+<svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 64 64" 
+    width="64" 
+    height="64" 
+    fill="none">
+
+  <!-- Folder body -->
+  <rect x="4" y="16" width="56" height="40" rx="4" ry="4" fill="#d5920c" stroke="#b07f09" stroke-width="2"/>
+
+  <!-- Folder tab -->
+  <path d="M4 16 L18 16 L22 8 L40 8 L44 16 Z" fill="#c47f09" stroke="#b07f09" stroke-width="2"/>
+
+  <!-- Optional shading for depth -->
+  <path d="M4 16 H60 V54 H4 Z" fill="url(#folderGradient)"/>
+  
+  <defs>
+    <linearGradient id="folderGradient" x1="0" y1="16" x2="0" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d5920c" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#b07f09" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+</svg>
