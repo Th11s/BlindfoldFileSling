@@ -57,10 +57,11 @@ public class FileSystemStorageService(
 
             currentUser.DirectoryQuota ?? _options.Value.DefaultDirectoryQuotaBytes,
             0,
-            new(
-                command.EncryptedData.EncryptionHeader,
-                command.EncryptedData.Base64CipherText
-            )
+
+            new (true, false),
+
+            command.ChallengePublicKey,
+            command.ProtectedData
         );
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -81,10 +82,7 @@ public class FileSystemStorageService(
 
         metadata = metadata with
         {
-            Protected = new(
-                command.EncryptedData.EncryptionHeader,
-                command.EncryptedData.Base64CipherText
-            )
+            ProtectedData = command.ProtectedData
         };
 
         await UpdateMetadataFile(
@@ -105,8 +103,17 @@ public class FileSystemStorageService(
     }
 
 
-    
+    public async Task<ChallengeId> SaveChallenge(DirectoryId directoryId, EncryptedChallenge challenge)
+    {
+        var challengeId = new ChallengeId();
+        var challengeFilePath = GetChallengeFilePath(directoryId, challengeId);
 
+        using var fileStream = new FileStream(challengeFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+        await JsonSerializer.SerializeAsync(fileStream, challenge);
+        await fileStream.FlushAsync();
+
+        return challengeId;
+    }
 
 
     public async Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command, ClaimsPrincipal currentUser)
@@ -140,10 +147,7 @@ public class FileSystemStorageService(
             command.ChunkCount,
             0,
 
-            new ProtectedMetadata(
-                command.EncryptedData.EncryptionHeader,
-                command.EncryptedData.Base64CipherText
-            )
+            command.ProtectedData
         );
 
         await UpdateMetadataFile(
@@ -305,6 +309,13 @@ public class FileSystemStorageService(
         var directoryPath = Path.Combine(_options.Value.StoragePath, directoryId.Value);
 
         return directoryPath;
+    }
+
+    private string GetChallengeFilePath(DirectoryId directoryId, ChallengeId challengeId)
+    {
+        var directoryPath = GetDirectoryPath(directoryId);
+        var challengeFilePath = Path.Combine(directoryPath, $"{challengeId.Value}.challenge");
+        return challengeFilePath;
     }
 
     private string GetFileDirectoryPath(DirectoryId directoryId, FileId fileId)

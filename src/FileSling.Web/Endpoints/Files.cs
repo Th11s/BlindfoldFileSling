@@ -74,10 +74,7 @@ internal static class Files
                 file.SizeInBytes.ToReadableFileSize(),
                 file.DownloadCount,
 
-                new (
-                    file.Protected.EncryptionHeader,
-                    file.Protected.Base64CipherText
-                )
+                file.ProtectedData
             );
         }
     }

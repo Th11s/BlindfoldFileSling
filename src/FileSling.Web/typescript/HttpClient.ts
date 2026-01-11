@@ -1,8 +1,48 @@
 import * as Model from "./Model";
 
+interface AuthenticateCommand {
+    challenge: string,
+    signature: string,
+}
+
+interface AuthenticateResponse {
+    success: boolean;
+
+    allowDownload?: boolean;
+    allowUpload?: boolean;
+}
+
+export async function authenticateToDirectory(directoryId: string, command: AuthenticateCommand): Promise<boolean> {
+    const header = `${command.challenge}|${command.signature}`;
+
+    const response = await fetch(`api/auth/${directoryId}`, {
+        method: "HEAD",
+        headers: {
+            "Authorization": `KeyProof {header}`
+        }
+    });
+
+    return response.ok;
+}
+
+export async function getDirectories(): Promise<Map<Model.DirectoryId, Model.DirectoryMetadataResponse> | undefined> {
+    const response = await fetch("api/directory");
+    if (!response.ok) {
+        return undefined;
+    }
+
+    const data = await response.json() as Model.DirectoryMetadataResponse[];
+    const result = new Map<Model.DirectoryId, Model.DirectoryMetadataResponse>();
+    for (const item of data) {
+        result.set(item.directoryId, item);
+    }
+
+    return result;
+}
+
 interface CreateDirectoryCommand {
-    encryptedData: Model.EncryptedData;
-    ownerChallenge: Model.EncryptedChallenge;
+    protectedData: Model.EncryptedString;
+    challengePublicKey: string;
 }
 
 export async function createDirectory(command: CreateDirectoryCommand) : Promise<Response> {
@@ -16,7 +56,7 @@ export async function createDirectory(command: CreateDirectoryCommand) : Promise
 }
 
 interface CreateFileCommand {
-    encryptedData: Model.EncryptedData;
+    protectedData: Model.EncryptedString;
 }
 
 export async function createFile(directoryId: string, command: CreateFileCommand): Promise<Response> {
@@ -30,7 +70,7 @@ export async function createFile(directoryId: string, command: CreateFileCommand
 }
 
 
-export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadataResponse | undefined> {
+export async function getDirectory(directoryId: string): Promise<Model.DirectoryMetadataResponse | undefined> {
     const response = await fetch(`api/directory/${directoryId}`);
     if (!response.ok) {
         return undefined;

@@ -3,9 +3,9 @@
 namespace Th11s.FileSling.Model;
 
 [DebuggerDisplay($"{{{nameof(Value)},nq}}")]
-public record struct DirectoryId(string Value)
+public record struct ChallengeId(string Value)
 {
-    public DirectoryId() 
+    public ChallengeId()
         : this(new CryptoToken())
     { }
 }

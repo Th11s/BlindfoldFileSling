@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import { ActivityIndicator } from "./ActivityIndicator.js";
-import * as Model from "../Model.js"
-import * as ClientStorage from "../ClientStorage.js";
+import { ActivityIndicator } from "./ActivityIndicator";
+import * as Model from "../Model"
+import { getDirectories } from "../DirectoryService";
 
 function DirectoryList() {
     const [directories, setDirectories] = React.useState<Model.DirectoryMetadata[]>([]);
@@ -11,8 +11,9 @@ function DirectoryList() {
 
     React.useEffect(() => {
         async function loadDirectories() {
-            const dirs = await ClientStorage.getDirectories();
-            setDirectories(dirs);
+            const keys = getDirectories();
+
+            //setDirectories(dirs);
             setLoading(false);
         }
         loadDirectories();

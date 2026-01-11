@@ -1,14 +1,9 @@
-export interface EncryptedData {
-    encryptionHeader: string;
-    base64CipherText: string;
-}
-
-export interface EncryptedChallenge extends EncryptedData {
-    clearTextChallenge: string;
-}
+export type EncryptedString = string;
+export type DirectoryId = string;
 
 export interface DirectoryProtectedData {
     displayName: string;
+    challengeKey: string;
 }
 
 interface DirectoryMetadataBase {
@@ -23,10 +18,22 @@ interface DirectoryMetadataBase {
 }
 
 export interface DirectoryMetadataResponse extends DirectoryMetadataBase {
-    encryptedData: EncryptedData;
+    protectedData: EncryptedString;
 }
 
 export interface DirectoryMetadata extends DirectoryMetadataBase, DirectoryProtectedData {
+}
+
+export interface DirectoryMetadataWithUserCaps extends DirectoryMetadata {
+    capabilities: DirectoryCapabilities;
+}
+
+interface DirectoryCapabilities {
+    hasDirectoryKey?: boolean;
+    canManageDirectory?: boolean;
+
+    canUploadFiles?: boolean;
+    canDownloadFiles?: boolean;
 }
 
 interface FileMetadataBase {
@@ -44,7 +51,7 @@ export interface FileProtectedData {
 }
 
 export interface FileMetadataResponse extends FileMetadataBase {
-    encryptedData: EncryptedData;
+    protectedData: EncryptedString;
 }
 
 export interface FileMetadata extends FileMetadataBase, FileProtectedData {

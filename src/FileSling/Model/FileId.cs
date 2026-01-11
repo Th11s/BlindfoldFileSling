@@ -6,6 +6,6 @@ namespace Th11s.FileSling.Model;
 public record struct FileId(string Value)
 {
     public FileId() 
-        : this(new CryptoGuid())
+        : this(new CryptoToken())
     { }
 }

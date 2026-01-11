@@ -11,5 +11,13 @@ public record DirectoryMetadata(
     long MaxStorageBytes,
     long UsedStorageBytes,
 
-    ProtectedMetadata Protected
+    UserCapabilities Capabilities,
+
+    string ChallengePublicKey,
+    string ProtectedData
+);
+
+public record UserCapabilities(
+    bool AllowUpload,
+    bool AllowDownload
 );

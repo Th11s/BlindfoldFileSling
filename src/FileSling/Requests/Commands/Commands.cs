@@ -12,19 +12,19 @@ public record EncryptedChallenge(
 ) : EncryptedData(EncryptionHeader, Base64CipherText);
 
 public record CreateDirectory(
-    EncryptedData EncryptedData,
-    EncryptedChallenge OwnerChallenge
+    string ProtectedData,
+    string ChallengePublicKey
 );
 
 public record ModifyDirectory(
-    EncryptedData EncryptedData
+    string ProtectedData
 );
 
 public record CreateFile(
     long SizeInBytes,
     uint ChunkCount,
 
-    EncryptedData EncryptedData
+    string ProtectedData
 );
 
 public record EncryptedStream(

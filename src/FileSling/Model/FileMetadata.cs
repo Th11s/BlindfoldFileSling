@@ -11,5 +11,5 @@ public record FileMetadata(
     uint ChunkCount,
     int DownloadCount,
 
-    ProtectedMetadata Protected
+    string ProtectedData
 );

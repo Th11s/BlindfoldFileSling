@@ -1,25 +1,71 @@
-import { EncryptedData, EncryptedChallenge } from "./Model";
-import * as Util from "./Utils";
+import { EncryptedString } from "./Model";
+import * as Utils from "./Utils";
 
-export async function createCyptoKey(): Promise<CryptoKey> {
-    const aesKey = await window.crypto.subtle.generateKey(
-        {
-            name: "AES-GCM",
-            length: 256
-        },
-        true,
-        ["encrypt", "decrypt"]
-    );
-
-    return aesKey;
+export function createAESCyptoKey(): Promise<CryptoKey> {
+    return window.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
 }
 
-export function createIV() {
+export async function exportAESKeyToBase64(cryptoKey: CryptoKey): Promise<string> {
+    const keyData = await window.crypto.subtle.exportKey("raw", cryptoKey);
+    const base64Key = Utils.arrayBufferToBase64(keyData);
+
+    return base64Key;
+}
+
+export function importAESKeyFromBase64(base64Key: string): Promise<CryptoKey> {
+    const keyData = Utils.base64ToArrayBuffer(base64Key);
+    return window.crypto.subtle.importKey("raw", keyData, "AES-GCM", true, ["encrypt", "decrypt"]);
+}
+
+
+export function createECCryptoKey(): Promise<CryptoKeyPair> {
+    return window.crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+}
+
+export async function exportECPublicKeyToBase64(cryptoKey: CryptoKey): Promise<string> {
+    const keyData = await window.crypto.subtle.exportKey("spki", cryptoKey);
+    const base64Key = Utils.arrayBufferToBase64(keyData);
+
+    return base64Key;
+}
+
+export async function exportECPrivateKeyToBase64(cryptoKey: CryptoKey): Promise<string> {
+    const keyData = await window.crypto.subtle.exportKey("pkcs8", cryptoKey);
+    const base64Key = Utils.arrayBufferToBase64(keyData);
+
+    return base64Key;
+}
+
+export async function importECPrivateKeyFromBase64(base64Key: string): Promise<CryptoKeyPair> {
+    const keyData = Utils.base64ToArrayBuffer(base64Key);
+    return window.crypto.subtle.importKey("pkcs8", keyData, { name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]) as unknown as Promise<CryptoKeyPair>;
+}
+
+export async function createSignedChallenge(privateKey: CryptoKey): Promise<{ challenge: string; signature: string }> {
+    const challenge = window.crypto.getRandomValues(new Uint8Array(32));
+    const signature = await window.crypto.subtle.sign(
+        {
+            name: "ECDSA",
+            hash: { name: "SHA-256" },
+        },
+        privateKey,
+        challenge
+    );
+
+    return {
+        challenge: Utils.uInt8ArrayToBase64(challenge),
+        signature: Utils.arrayBufferToBase64(signature),
+    }
+}
+
+function createIV() {
     const iv: Uint8Array<ArrayBuffer> = new Uint8Array(12);
     return window.crypto.getRandomValues(iv);
 }
 
-export async function encryptString(clearText: string, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
+
+
+async function encryptString(clearText: string, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
     const encoder = new TextEncoder();
     const data = encoder.encode(clearText);
 
@@ -33,9 +79,19 @@ export async function encryptString(clearText: string, iv: Uint8Array<ArrayBuffe
     );
 }
 
-export function encryptStringifiedObject<T>(obj: T, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey): Promise<ArrayBuffer> {
+export async function encryptStringAsBase64WithHeader(clearText: string, cryptoKey: CryptoKey): Promise<EncryptedString> {
+    const iv = createIV();
+    const cipherBuffer = await encryptString(clearText, iv, cryptoKey);
+    const base64CipherText = Utils.arrayBufferToBase64(cipherBuffer);
+    const base64Header = Utils.uInt8ArrayToBase64(iv);
+
+    return `${base64Header}:${base64CipherText}`;
+}
+
+
+export function encryptObjectAsBase64WithHeader<T>(obj: T, cryptoKey: CryptoKey): Promise<EncryptedString> {
     const json = JSON.stringify(obj);
-    return encryptString(json, iv, cryptoKey);
+    return encryptStringAsBase64WithHeader(json, cryptoKey);
 }
 
 export async function decryptAsString(cypherData: ArrayBuffer, iv: Uint8Array<ArrayBuffer>, cryptoKey: CryptoKey) : Promise<string> {
@@ -59,27 +115,12 @@ async function decryptAsObjectInternal<T>(cypherData: ArrayBuffer, iv: Uint8Arra
     return JSON.parse(clearText) as T;
 }
 
-export function decryptAsObject<T>(encryptedData: EncryptedData, cryptoKey: CryptoKey): Promise<T> {
+export function decryptBase64WithHeaderAsObject<T>(encryptedData: EncryptedString, cryptoKey: CryptoKey): Promise<T> {
+    const [base64Header, base64CipherText] = encryptedData.split(":");
+
     return decryptAsObjectInternal(
-        Util.base64ToArrayBuffer(encryptedData.base64CipherText),
-        Util.base64ToUint8Array(encryptedData.encryptionHeader),
+        Utils.base64ToArrayBuffer(base64CipherText),
+        Utils.base64ToUint8Array(base64Header),
         cryptoKey
     );
-}
-
-export async function createChallenge(cryptoKey: CryptoKey): Promise<EncryptedChallenge> {
-    const challenge = window.crypto.getRandomValues(new Uint8Array(32));
-    const plainChallengeString = Util.uInt8ArrayToBase64(challenge);
-
-    const challengeIV = createIV();
-
-    const cipherString = await encryptString(plainChallengeString, challengeIV, cryptoKey);
-    const base64CipherText = Util.arrayBufferToBase64(cipherString);
-
-    return {
-        encryptionHeader: Util.uInt8ArrayToBase64(challengeIV),
-        base64CipherText: base64CipherText,
-        clearTextChallenge: plainChallengeString
-    }
-
 }

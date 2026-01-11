@@ -24,7 +24,7 @@ public static class EndpointExtensions
     {
         var api = builder.MapGroup("/api/");
 
-        api.MapPost("auth/{directoryId}", Security.ChallengeDirectorySecret)
+        api.MapMethods("auth/{directoryId}", [HttpMethods.Head], Authentication.ChallengeDirectorySecret)
             .WithName(EndpointNames.AuthorizeDirectoryAccess);
 
         MapDirectoryApi(api);

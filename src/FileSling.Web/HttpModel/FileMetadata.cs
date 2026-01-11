@@ -9,5 +9,5 @@ public record FileMetadata(
     string FileSize,
     int? DownloadCount,
 
-    EncryptedMetadata EncryptedData
+    string ProtectedData
 );
