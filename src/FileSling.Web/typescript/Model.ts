@@ -3,7 +3,7 @@ export type DirectoryId = string;
 
 export interface DirectoryProtectedData {
     displayName: string;
-    challengeKey: string;
+    challengeKey: string | null;
 }
 
 interface DirectoryMetadataBase {

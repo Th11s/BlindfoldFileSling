@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System.Security.Claims;
 
-using Th11s.FileSling.Model;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 using Th11s.FileSling.Services;
 
 namespace Th11s.FileSling.Web.Security;
@@ -11,13 +12,26 @@ public class FileSlingCookieAuthenticationEvents(IFileStorage fileStorage) : Coo
 
     public override async Task SigningIn(CookieSigningInContext context)
     {
-        // TODO: this code should be moved into a proper ClaimsTransformer service, that is only invoked during proper signin
-        var ownedDirectories = await _fileStorage.GetOwnedDirectories(context.Principal);
-
-        var claimsIdentity = context.Principal.Identity as System.Security.Claims.ClaimsIdentity;
-        foreach (var dir in ownedDirectories)
+        // TODO: this code should be moved into a proper service, that is only invoked during proper signin
+        if(context.Principal == null)
         {
-            claimsIdentity.AddClaim(new System.Security.Claims.Claim($"dir:{dir.Id.Value}", DirectoryAccessRequirement.Owner.AccessLevel));
+            return;
+        }
+
+        if (context.Principal.Identity is not ClaimsIdentity claimsIdentity)
+        {
+            return;
+        }
+
+        if (!context.Principal.HasClaim("ownership_initialized", "true"))
+        {
+            var ownedDirectories = await _fileStorage.GetOwnedDirectories(context.Principal);
+            foreach (var dir in ownedDirectories)
+            {
+                claimsIdentity.AddClaim(new Claim($"dir:{dir.Id.Value}", DirectoryAccessRequirement.Owner.AccessLevel));
+            }
+
+            claimsIdentity.AddClaim(new Claim("ownership_initialized", "true"));
         }
 
         await base.SigningIn(context);

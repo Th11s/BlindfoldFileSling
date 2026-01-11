@@ -12,7 +12,10 @@ import {
     createAESCyptoKey,
     importECPrivateKeyFromBase64,
     encryptObjectAsBase64WithHeader,
-    decryptBase64WithHeaderAsObject
+    decryptBase64WithHeaderAsObject,
+    createECCryptoKey,
+    exportECPublicKeyToBase64,
+    exportECPrivateKeyToBase64
 } from "./Cryptography";
 import * as _apiClient from "./HttpClient";
 import * as Model from "./Model";
@@ -52,8 +55,7 @@ export async function getDirectories() : Promise<Model.DirectoryMetadataWithUser
         else {
             const metadata = await getDirectory(directoryId, cryptoKey);
             if (metadata) {
-                const keyPair = await importECPrivateKeyFromBase64(metadata.challengeKey);
-                const isAuthed = await _apiClient.authenticateToDirectory(directoryId, keyPair.privateKey);
+                const isAuthed = await authenticateToDirectory(directoryId, metadata);
 
                 if (isAuthed) {
                     usableDirectories.push({
@@ -82,14 +84,17 @@ export async function getDirectories() : Promise<Model.DirectoryMetadataWithUser
     for (const [directoryId, ownedDirectory] of ownedDirectories) {
         usableDirectories.push({
             directoryId: directoryId,
+
             displayName: `Keyless directory ${++counter} (${directoryId})`,
+            challengeKey: null,
+
             createdAt: ownedDirectory.createdAt,
             expiresAt: ownedDirectory.expiresAt,
             lastFileUploadAt: ownedDirectory.lastFileUploadAt,
             maxStorageSpace: ownedDirectory.maxStorageSpace,
             usedStorageSpace: ownedDirectory.usedStorageSpace,
             capabilities: {
-                canDeleteDirectory: true,
+                canManageDirectory: true,
             }
         });
 
@@ -122,7 +127,10 @@ async function decryptAndStoreDirectoryMetadata(directoryId: Model.DirectoryId, 
 
     const metadata: Model.DirectoryMetadata = {
         directoryId,
+
         displayName: unprotectedData.displayName,
+        challengeKey: unprotectedData.challengeKey,
+
         createdAt: directoryResponse.createdAt,
         expiresAt: directoryResponse.expiresAt,
         lastFileUploadAt: directoryResponse.lastFileUploadAt,
@@ -144,9 +152,14 @@ async function removeStoredData(directoryId: Model.DirectoryId): Promise<void> {
 
 export async function createDirectory(directoryName: string): Promise<void> {
     const cryptoKey = await createAESCyptoKey();
+    const keyPosessionProofKeyPair = await createECCryptoKey();
+
+    const base64PrivateKey = await exportECPrivateKeyToBase64(keyPosessionProofKeyPair);
+    const base64PublicKey = await exportECPublicKeyToBase64(keyPosessionProofKeyPair);
 
     const protectableData: Model.DirectoryProtectedData = {
-        displayName: directoryName
+        displayName: directoryName,
+        challengeKey: base64PrivateKey
     };
 
     const protectedData = await encryptObjectAsBase64WithHeader(protectableData, cryptoKey);
@@ -154,7 +167,7 @@ export async function createDirectory(directoryName: string): Promise<void> {
     const response = await _apiClient.createDirectory(
         {
             protectedData: protectedData,
-            //ownerChallenge: ownerChallenge
+            challengePublicKey: base64PublicKey
         });
 
     if (response.ok) {
@@ -164,12 +177,15 @@ export async function createDirectory(directoryName: string): Promise<void> {
 
         var metadata: Model.DirectoryMetadata = {
             directoryId: responseObject.directoryId,
+
             createdAt: responseObject.createdAt,
             expiresAt: responseObject.expiresAt,
             lastFileUploadAt: responseObject.lastFileUploadAt,
             maxStorageSpace: responseObject.maxStorageSpace,
             usedStorageSpace: responseObject.usedStorageSpace,
-            displayName: directoryName
+
+            displayName: directoryName,
+            challengeKey: base64PrivateKey
         };
 
         await storeDirectoryKey(responseObject.directoryId, cryptoKey);
@@ -243,7 +259,10 @@ async function getMetadataFromServer(directoryId: string): Promise<Model.Directo
 
     const metadata = {
         directoryId,
+
         displayName: unprotectedData.displayName,
+        challengeKey: unprotectedData.challengeKey,
+        
         createdAt: metadataResponse.createdAt,
         expiresAt: metadataResponse.expiresAt,
         lastFileUploadAt: metadataResponse.lastFileUploadAt,
@@ -288,9 +307,13 @@ export async function getDirectoryFiles(directoryId: string): Promise<Model.File
     return result;
 }
 
-async function authenticateToDirectory(directoryId: string, metadata: Model.DirectoryMetadata) : Promise<boolean> {
-    const keyPair = await importECPrivateKeyFromBase64(metadata.challengeKey);
-    const authRequest = await createSignedChallenge(keyPair.privateKey);
+async function authenticateToDirectory(directoryId: string, metadata: Model.DirectoryMetadata): Promise<boolean> {
+    if (!metadata.challengeKey) {
+        return false;
+    }
+
+    const privateKey = await importECPrivateKeyFromBase64(metadata.challengeKey);
+    const authRequest = await createSignedChallenge(privateKey);
 
     return await _apiClient.authenticateToDirectory(directoryId, authRequest);
 }

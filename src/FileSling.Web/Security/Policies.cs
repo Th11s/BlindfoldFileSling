@@ -2,6 +2,8 @@
 
 public static class Policies
 {
-    public const string DirectoryReadAccess = nameof(DirectoryReadAccess);
-    public const string DirectoryWriteAccess = nameof(DirectoryWriteAccess);
+    public const string KeyPosession = nameof(KeyPosession);
+    public const string DirectoryOwner = nameof(DirectoryOwner);
+    public const string DirectoryOwnerWithKey = nameof(DirectoryOwnerWithKey);
+    public const string DirectoryCreation = nameof(DirectoryCreation);
 }

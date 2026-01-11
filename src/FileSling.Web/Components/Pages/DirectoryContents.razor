@@ -3,7 +3,7 @@
 @using Th11s.FileSling.Services
 
 @attribute [StreamRendering]
-@attribute [Authorize(Policies.DirectoryReadAccess)]
+@attribute [Authorize(Policies.KeyPosession)]
 
 <th11s-file-list-header directory-id="@DirectoryId"></th11s-file-list-header>
 <th11s-file-upload directory-id="@DirectoryId"></th11s-file-upload>

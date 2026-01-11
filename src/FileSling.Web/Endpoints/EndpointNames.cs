@@ -1,4 +1,6 @@
-﻿namespace Th11s.FileSling.Web.Endpoints;
+﻿using Th11s.FileSling.Web.Security;
+
+namespace Th11s.FileSling.Web.Endpoints;
 
 public static class EndpointNames
 {
@@ -38,22 +40,28 @@ public static class EndpointExtensions
         var files = api.MapGroup("file");
 
         files.MapGet("{directoryId}", Files.GetList)
-            .WithName(EndpointNames.GetFileList);
+            .WithName(EndpointNames.GetFileList)
+            .RequireAuthorization(Policies.KeyPosession);
 
         files.MapGet("{directoryId}/{fileId}", Files.Download)
-            .WithName(EndpointNames.DownloadFile);
+            .WithName(EndpointNames.DownloadFile)
+            .RequireAuthorization(Policies.KeyPosession);
 
         files.MapPost("{directoryId}", Files.Create)
-            .WithName(EndpointNames.CreateFile);
+            .WithName(EndpointNames.CreateFile)
+            .RequireAuthorization(Policies.KeyPosession);
 
         files.MapPut("{directoryId}/{fileId}", Files.Append)
-            .WithName(EndpointNames.AppendFile);
+            .WithName(EndpointNames.AppendFile)
+            .RequireAuthorization(Policies.KeyPosession);
 
         files.MapPost("{directoryId}/{fileId}", Files.FinalizeUpload)
-            .WithName(EndpointNames.FinalizeFile);
+            .WithName(EndpointNames.FinalizeFile)
+            .RequireAuthorization(Policies.KeyPosession);
 
         files.MapDelete("{directoryId}/{fileId}", Files.Delete)
-            .WithName(EndpointNames.DeleteFile);
+            .WithName(EndpointNames.DeleteFile)
+            .RequireAuthorization(Policies.KeyPosession);
 
         return builder;
     }
@@ -62,19 +70,22 @@ public static class EndpointExtensions
     {
         var directory = api.MapGroup("directory");
 
-        directory.MapGet("", (Delegate)Directories.ListOwned)
+        directory.MapGet("", Directories.ListOwned)
             .WithName(EndpointNames.ListDirectories);
 
         directory.MapGet("{directoryId}", Directories.Get)
             .WithName(EndpointNames.GetDirectory);
 
         directory.MapPost("", Directories.Create)
-            .WithName(EndpointNames.CreateDirectory);
+            .WithName(EndpointNames.CreateDirectory)
+            .RequireAuthorization(Policies.DirectoryCreation);
 
         directory.MapPut("{directoryId}", Directories.Rename)
-            .WithName(EndpointNames.RenameDirectory);
+            .WithName(EndpointNames.RenameDirectory)
+            .RequireAuthorization(Policies.DirectoryOwnerWithKey);
 
         directory.MapDelete("{directoryId}", Directories.Delete)
-            .WithName(EndpointNames.DeleteDirectory);
+            .WithName(EndpointNames.DeleteDirectory)
+            .RequireAuthorization(Policies.DirectoryOwner);
     }
 }

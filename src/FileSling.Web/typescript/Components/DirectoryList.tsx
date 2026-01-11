@@ -2,18 +2,18 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import { ActivityIndicator } from "./ActivityIndicator";
-import * as Model from "../Model"
+import { DirectoryMetadataWithUserCaps } from "../Model"
 import { getDirectories } from "../DirectoryService";
 
 function DirectoryList() {
-    const [directories, setDirectories] = React.useState<Model.DirectoryMetadata[]>([]);
+    const [directories, setDirectories] = React.useState<DirectoryMetadataWithUserCaps[]>([]);
     const [loading, setLoading] = React.useState<boolean>(true);
 
     React.useEffect(() => {
         async function loadDirectories() {
-            const keys = getDirectories();
+            const directories = await getDirectories();
 
-            //setDirectories(dirs);
+            setDirectories(directories);
             setLoading(false);
         }
         loadDirectories();

@@ -1,13 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 
-import * as DirectoryService from "../DirectoryService";
+import { createDirectory } from "../DirectoryService";
 
-export function CreateFolder({
-    onCreated
-}: {
-    onCreated?: (folderName: string) => void;
-}) {
+export function CreateDirectory() {
     const [folderName, setFolderName] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -25,11 +21,13 @@ export function CreateFolder({
         }
         setLoading(true);
         try {
-            await DirectoryService.createDirectory(effectiveFolderName);
+            await createDirectory(effectiveFolderName);
 
             setFolderName("");
             if (inputRef.current) inputRef.current.value = "";
-            if (onCreated) onCreated(folderName);
+
+            // TODO: remove this when events are implemented
+            window.location.reload();
         } catch (e: any) {
             setError(e.message || "Unknown error");
         } finally {
@@ -59,6 +57,6 @@ export function CreateFolder({
 
 export class CreateFolderWebComponent extends HTMLElement {
     connectedCallback() {
-        ReactDOM.createRoot(this).render(<CreateFolder />);
+        ReactDOM.createRoot(this).render(<CreateDirectory />);
     }
 }

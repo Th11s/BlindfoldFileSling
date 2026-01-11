@@ -22,23 +22,23 @@ export function createECCryptoKey(): Promise<CryptoKeyPair> {
     return window.crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
 }
 
-export async function exportECPublicKeyToBase64(cryptoKey: CryptoKey): Promise<string> {
-    const keyData = await window.crypto.subtle.exportKey("spki", cryptoKey);
+export async function exportECPublicKeyToBase64(cryptoKey: CryptoKeyPair): Promise<string> {
+    const keyData = await window.crypto.subtle.exportKey("spki", cryptoKey.publicKey);
     const base64Key = Utils.arrayBufferToBase64(keyData);
 
     return base64Key;
 }
 
-export async function exportECPrivateKeyToBase64(cryptoKey: CryptoKey): Promise<string> {
-    const keyData = await window.crypto.subtle.exportKey("pkcs8", cryptoKey);
+export async function exportECPrivateKeyToBase64(cryptoKey: CryptoKeyPair): Promise<string> {
+    const keyData = await window.crypto.subtle.exportKey("pkcs8", cryptoKey.privateKey);
     const base64Key = Utils.arrayBufferToBase64(keyData);
 
     return base64Key;
 }
 
-export async function importECPrivateKeyFromBase64(base64Key: string): Promise<CryptoKeyPair> {
+export async function importECPrivateKeyFromBase64(base64Key: string): Promise<CryptoKey> {
     const keyData = Utils.base64ToArrayBuffer(base64Key);
-    return window.crypto.subtle.importKey("pkcs8", keyData, { name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]) as unknown as Promise<CryptoKeyPair>;
+    return window.crypto.subtle.importKey("pkcs8", keyData, { name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);
 }
 
 export async function createSignedChallenge(privateKey: CryptoKey): Promise<{ challenge: string; signature: string }> {

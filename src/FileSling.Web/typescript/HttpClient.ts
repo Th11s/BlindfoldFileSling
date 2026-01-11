@@ -5,20 +5,13 @@ interface AuthenticateCommand {
     signature: string,
 }
 
-interface AuthenticateResponse {
-    success: boolean;
-
-    allowDownload?: boolean;
-    allowUpload?: boolean;
-}
-
 export async function authenticateToDirectory(directoryId: string, command: AuthenticateCommand): Promise<boolean> {
     const header = `${command.challenge}|${command.signature}`;
 
     const response = await fetch(`api/auth/${directoryId}`, {
         method: "HEAD",
         headers: {
-            "Authorization": `KeyProof {header}`
+            "Authorization": `KeyProof ${header}`
         }
     });
 

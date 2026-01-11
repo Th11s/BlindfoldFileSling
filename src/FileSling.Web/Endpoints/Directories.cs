@@ -8,6 +8,7 @@ using Th11s.FileSling.Model;
 using Th11s.FileSling.Services;
 using Th11s.FileSling.Web.Extensions;
 using Th11s.FileSling.Web.Resources;
+using Th11s.FileSling.Web.Security;
 
 using static Microsoft.AspNetCore.Http.TypedResults;
 
@@ -15,9 +16,21 @@ namespace Th11s.FileSling.Web.Endpoints;
 
 internal static class Directories
 {
-    internal static async Task<IResult> ListOwned(HttpContext httpContext)
+    internal static async Task<Ok<IEnumerable<HttpModel.DirectoryMetadata>>> ListOwned(
+        HttpContext httpContext, 
+        IFileStorage storage,
+        IStringLocalizer<SharedResources> localizer)
     {
-        throw new NotImplementedException();
+        if(httpContext.User.Identity?.IsAuthenticated != true)
+        {
+            return Ok(Enumerable.Empty<HttpModel.DirectoryMetadata>());
+        }
+
+        var directories = await storage.GetOwnedDirectories(httpContext.User);
+        var response = directories
+            .Select(dir => dir.ToHttpModel(localizer));
+
+        return Ok(response);
     }
 
 
@@ -49,7 +62,11 @@ internal static class Directories
         var directory = await fileStorage.CreateDirectory(command, currentUser, cancellationToken);
         var httpResult = directory.ToHttpModel(localizer);
 
-        await context.SignInAsync(currentUser);
+        await Authentication.AddClaimAndSignin(context, currentUser, directory.Id.Value, 
+            DirectoryAccessRequirement.Owner.AccessLevel, 
+            DirectoryAccessRequirement.Content.AccessLevel
+        );
+        
         return Ok(httpResult);
     }
 

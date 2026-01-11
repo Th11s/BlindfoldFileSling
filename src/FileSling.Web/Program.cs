@@ -27,13 +27,24 @@ builder.Services.AddScoped<FileSlingCookieAuthenticationEvents>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.DirectoryReadAccess, p =>
+    .AddPolicy(Policies.KeyPosession, p =>
     {
-        p.Requirements.Add(DirectoryAccessRequirement.Read);
+        p.Requirements.Add(DirectoryAccessRequirement.Content);
     })
-    .AddPolicy(Policies.DirectoryWriteAccess, p =>
+    .AddPolicy(Policies.DirectoryOwner, p =>
     {
-        p.Requirements.Add(DirectoryAccessRequirement.Write);
+        p.RequireAuthenticatedUser();
+        p.Requirements.Add(DirectoryAccessRequirement.Owner);
+    })
+    .AddPolicy(Policies.DirectoryOwnerWithKey, p =>
+    {
+        p.RequireAuthenticatedUser();
+        p.Requirements.Add(DirectoryAccessRequirement.Content);
+        p.Requirements.Add(DirectoryAccessRequirement.Owner);
+    })
+    .AddPolicy(Policies.DirectoryCreation, p =>
+    {
+        p.RequireAuthenticatedUser();
     });
 
 builder.Services.AddSingleton<IAuthorizationHandler, DirectoryIdRequirementHandler>();

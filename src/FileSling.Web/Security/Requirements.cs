@@ -24,8 +24,7 @@ public class DirectoryIdRequirementHandler : AuthorizationHandler<DirectoryAcces
         var claimType = $"dir:{directoryId}";
 
         if (
-            context.User.HasClaim(claimType, requirement.AccessLevel) || 
-            context.User.HasClaim(claimType, "owner")
+            context.User.HasClaim(claimType, requirement.AccessLevel)
         )
         {
             context.Succeed(requirement);
@@ -46,8 +45,7 @@ public class DirectoryAccessRequirement : IAuthorizationRequirement
 
     public string AccessLevel { get; }
 
-    public static DirectoryAccessRequirement Read { get; } = new DirectoryAccessRequirement("read");
-    public static DirectoryAccessRequirement Write { get; } = new DirectoryAccessRequirement("write");
+    public static DirectoryAccessRequirement Content { get; } = new DirectoryAccessRequirement("content");
     public static DirectoryAccessRequirement Owner { get; } = new DirectoryAccessRequirement("owner");
 }
 
