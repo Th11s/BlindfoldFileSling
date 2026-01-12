@@ -58,7 +58,7 @@ export async function createSignedChallenge(privateKey: CryptoKey): Promise<{ ch
     }
 }
 
-function createIV() {
+export function createIV() {
     const iv: Uint8Array<ArrayBuffer> = new Uint8Array(12);
     return window.crypto.getRandomValues(iv);
 }

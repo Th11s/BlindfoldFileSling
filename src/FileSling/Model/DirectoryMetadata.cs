@@ -11,7 +11,7 @@ public record DirectoryMetadata(
     long MaxStorageBytes,
     long UsedStorageBytes,
 
-    UserCapabilities Capabilities,
+    UserCapabilities Configuration,
 
     string ChallengePublicKey,
     string ProtectedData

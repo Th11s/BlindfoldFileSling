@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 
 using Th11s.FileSling.Model;
@@ -20,15 +21,28 @@ internal static class Files
         IFileStorage fileStorage,
         IStringLocalizer<SharedResources> localizer)
     {
-        var file = await fileStorage.CreateFile(new (directoryId), command, context.User);
+        var file = await fileStorage.CreateFile(new (directoryId), command);
         var httpModel = file.ToHttpModel(localizer);
 
         return Ok(httpModel);
     }
 
-    internal static async Task<IResult> Append(HttpContext context)
+    internal static async Task<Ok> Append(
+        string directoryId,
+        string fileId,
+        [FromHeader(Name = "X-Chunk")] int chunkIndex,
+        [FromHeader(Name = "X-IV")] string aesIV,
+        IFileStorage storage,
+        Stream fileChunk,
+        HttpContext context)
     {
-        throw new NotImplementedException();
+        await storage.WriteFileChunk(
+            new(directoryId),
+            new(fileId),
+            new((uint)chunkIndex, new(aesIV, fileChunk))
+        );
+
+        return Ok();
     }
 
 
@@ -42,9 +56,14 @@ internal static class Files
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> FinalizeUpload(HttpContext context)
+    internal static async Task<Ok> FinalizeUpload(
+        string directoryId,
+        string fileId,
+        IFileStorage storage)
     {
-        throw new NotImplementedException();
+        await storage.FinalizeFile(new(directoryId), new(fileId));
+
+        return Ok();
     }
 
     internal static async Task<Ok<IEnumerable<HttpModel.FileMetadata>>> GetList(

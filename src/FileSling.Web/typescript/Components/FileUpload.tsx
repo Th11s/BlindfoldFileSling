@@ -14,7 +14,12 @@ function FileUpload({ directoryId }: FileUploadProps) {
         if (!files || files.length === 0) return;
 
         for (const file of Array.from(files)) {
-            DirectoryService.createFileInDirectory(directoryId, file);
+            const metadata = await DirectoryService.createFileInDirectory(directoryId, file);
+            if (!metadata) {
+                console.error("Failed to create file");
+                continue;
+            }
+            await DirectoryService.uploadFile(metadata, file);
             // TODO: Add file to upload queue and show progress
         }
     }, [directoryId]);

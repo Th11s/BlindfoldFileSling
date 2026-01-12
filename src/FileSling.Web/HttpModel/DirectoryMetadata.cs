@@ -9,14 +9,11 @@ public record DirectoryMetadata(
     string MaxStorageSpace,
     string UsedStorageSpace,
 
-    string ProtectedData,
-    DirectoryAccessFlags AccessFlags
+    DirectorySettings Settings,
+    
+    string ProtectedData
 );
 
-public enum DirectoryAccessFlags
-{
-    None = 0x0,
-    Upload = 0x1,
-    Download = 0x2,
-    Both = Upload | Download
-}
+public record DirectorySettings(
+    bool AllowUpload,
+    bool AllowDownload);

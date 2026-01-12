@@ -84,15 +84,6 @@ internal static class Directories
     {
         public HttpModel.DirectoryMetadata ToHttpModel(IStringLocalizer lr)
         {
-            var accessFlags =
-                (directory.Capabilities.AllowUpload, directory.Capabilities.AllowDownload) switch
-                {
-                    (true, true) => HttpModel.DirectoryAccessFlags.Both,
-                    (true, false) => HttpModel.DirectoryAccessFlags.Upload,
-                    (false, true) => HttpModel.DirectoryAccessFlags.Download,
-                    _ => HttpModel.DirectoryAccessFlags.None
-                };
-
             return new HttpModel.DirectoryMetadata(
                 directory.Id.Value,
                 directory.CreatedAt.ToString("r"),
@@ -100,9 +91,13 @@ internal static class Directories
                 directory.LastFileUploadAt?.ToString("r") ?? lr["LastFileUpload.Never"],
                 directory.MaxStorageBytes.ToReadableFileSize(),
                 directory.UsedStorageBytes.ToReadableFileSize(),
+         
+                new(
+                    directory.Configuration.AllowUpload,
+                    directory.Configuration.AllowDownload
+                ),
                 
-                directory.ProtectedData,
-                accessFlags
+                directory.ProtectedData
             );
         }
     }

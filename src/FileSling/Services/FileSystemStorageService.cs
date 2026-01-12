@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.IO;
+using System.Security.Claims;
 using System.Text.Json;
 
 using Microsoft.Extensions.Options;
@@ -19,10 +20,10 @@ public class FileSystemStorageService(
     private const string FileMetadataFileName = "_file.json";
 
     private const string FileDirectoryExtension = "file";
+    private const string PartialFileDirectoryExtension = "partial";
 
     private const string ChunkFileExtension = "part";
     private const string DeletionMarkerExtension = "deleted";
-    private const string PartialFileMarkerName = "_partial";
 
     private const string OwnerIndexFolderName = "_owners";
     private const string OwnerIndexFileExtension = ".idx";
@@ -73,7 +74,7 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task RenameDirectory(DirectoryId directoryId, ModifyDirectory command, ClaimsPrincipal currentUser)
+    public async Task RenameDirectory(DirectoryId directoryId, ModifyDirectory command)
     {
         var metadata = await ReadMetadataFile<DirectoryMetadata>(
             GetDirectoryPath(directoryId),
@@ -93,7 +94,7 @@ public class FileSystemStorageService(
     }
 
 
-    public Task DeleteDirectory(DirectoryId directoryId, ClaimsPrincipal currentUser)
+    public Task DeleteDirectory(DirectoryId directoryId)
     {
         //TODO: There should be a deletion service to actually delete these later
         var directoryPath = GetDirectoryPath(directoryId);
@@ -116,7 +117,7 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command, ClaimsPrincipal currentUser)
+    public async Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command)
     {
         var directoryMetadata = await ReadMetadataFile<DirectoryMetadata>(
             GetDirectoryPath(directoryId),
@@ -130,7 +131,7 @@ public class FileSystemStorageService(
         do
         {
             fileId = new FileId();
-            fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
+            fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Write);
         }
         while (Directory.Exists(fileDirectoryPath));
 
@@ -139,7 +140,6 @@ public class FileSystemStorageService(
         var metadata = new FileMetadata(
             fileId,
             directoryId,
-            currentUser.Subject,
             
             _timeProvider.GetUtcNow(),
 
@@ -156,29 +156,20 @@ public class FileSystemStorageService(
             metadata
         );
 
-        await CreatePartialFileMarker(fileDirectoryPath);
-
         // TODO: Reserve space on disk?
         
         return metadata;
     }
 
 
-    public async Task WriteFileChunk(DirectoryId directoryId, FileId fileId, WriteFileChunk command, ClaimsPrincipal currentUser)
+    public async Task WriteFileChunk(DirectoryId directoryId, FileId fileId, WriteFileChunk command)
     {
-        if(!Directory.Exists(GetFileDirectoryPath(directoryId, fileId)))
+        if(!Directory.Exists(GetFileDirectoryPath(directoryId, fileId, FileAccess.Write)))
         {
-            throw new InvalidOperationException("File does not exist.");
+            throw new InvalidOperationException("File does not exist or is finalized.");
         }
 
-        if(!PartialFileMarkerExists(GetFileDirectoryPath(directoryId, fileId)))
-        {
-            throw new InvalidOperationException("Cannot write chunk to finalized file.");
-        }
-
-
-
-        var filePath = GetChunkFilePath(directoryId, fileId, command.ChunkNumber);
+        var filePath = GetChunkFilePath(directoryId, fileId, command.ChunkNumber, FileAccess.Write);
 
         using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
         await command.EncryptedStream.CipherStream.CopyToAsync(fileStream);
@@ -186,19 +177,30 @@ public class FileSystemStorageService(
     }
 
 
-    public Task DeleteFile(DirectoryId directoryId, FileId fileId, ClaimsPrincipal currentUser)
+    public Task DeleteFile(DirectoryId directoryId, FileId fileId)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
+        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Read);
+        if(!Directory.Exists(fileDirectoryPath))
+        {
+            fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Write);
+        }
+        if(!Directory.Exists(fileDirectoryPath))
+        {
+            throw new InvalidOperationException("File does not exist.");
+        }
+
         var deletedFilePath = Path.ChangeExtension(fileDirectoryPath, DeletionMarkerExtension);
 
         Directory.Move(fileDirectoryPath, deletedFilePath);
         return Task.CompletedTask;
     }
 
-    public Task FinalizeFile(DirectoryId directoryId, FileId fileId, ClaimsPrincipal currentUser)
+    public Task FinalizeFile(DirectoryId directoryId, FileId fileId)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
-        DeletePartialFileMarker(fileDirectoryPath);
+        var partialFilePath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Write);
+        var finalizedFilePath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Read);
+
+        Directory.Move(partialFilePath, finalizedFilePath);
 
         return Task.CompletedTask;
     }
@@ -251,9 +253,12 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task<DirectoryMetadata> GetDirectory(DirectoryId directoryId)
+    public async Task<DirectoryMetadata?> GetDirectory(DirectoryId directoryId)
     {
         var directoryPath = GetDirectoryPath(directoryId);
+        if (!Path.Exists(directoryPath))
+            return null;
+
         var metadata = await ReadMetadataFile<DirectoryMetadata>(directoryPath, DirectoryMetadataFileName);
         return metadata;
     }
@@ -287,20 +292,17 @@ public class FileSystemStorageService(
     }
 
 
-    public Task<Stream> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber, ClaimsPrincipal currentUser)
+    public Task<Stream?> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
-
-        // Check if the file is finalized
-        if (PartialFileMarkerExists(fileDirectoryPath))
+        // get chunk file path
+        var chunkFilePath = GetChunkFilePath(directoryId, fileId, chunkNumber, FileAccess.Read);
+        if(!File.Exists(chunkFilePath))
         {
-            throw new InvalidOperationException("Cannot read chunk from a non-finalized file.");
+            return Task.FromResult<Stream?>(null);
         }
 
-        // get chunk file path
-        var chunkFilePath = GetChunkFilePath(directoryId, fileId, chunkNumber);
         var fileStream = new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return Task.FromResult<Stream>(fileStream);
+        return Task.FromResult<Stream?>(fileStream);
     }
 
 
@@ -318,16 +320,30 @@ public class FileSystemStorageService(
         return challengeFilePath;
     }
 
-    private string GetFileDirectoryPath(DirectoryId directoryId, FileId fileId)
+    private string GetFileDirectoryPath(DirectoryId directoryId, FileId fileId, FileAccess fileAccess)
     {
+        var extension = fileAccess switch { 
+            FileAccess.Read => FileDirectoryExtension, 
+            FileAccess.Write => PartialFileDirectoryExtension, 
+            _ => throw new InvalidOperationException("Invalid file access.") 
+        };
+
         var directoryPath = GetDirectoryPath(directoryId);
-        var filePath = Path.Combine(directoryPath, $"{fileId.Value}.{FileDirectoryExtension}");
+        var filePath = Path.Combine(directoryPath, $"{fileId.Value}.{extension}");
         return filePath;
     }
 
-    private string GetChunkFilePath(DirectoryId directoryId, FileId fileId, uint chunkNumber)
+    private string GetChunkFilePath(DirectoryId directoryId, FileId fileId, uint chunkNumber, FileAccess fileAccess)
     {
-        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId);
+        var extension = fileAccess switch
+        {
+            FileAccess.Read => FileDirectoryExtension,
+            FileAccess.Write => PartialFileDirectoryExtension,
+            _ => throw new InvalidOperationException("Invalid file access.")
+        };
+
+
+        var fileDirectoryPath = GetFileDirectoryPath(directoryId, fileId, fileAccess);
         var chunkFileName = $"{chunkNumber:D5}.{ChunkFileExtension}";
         var chunkFilePath = Path.Combine(fileDirectoryPath, chunkFileName);
 
@@ -361,25 +377,5 @@ public class FileSystemStorageService(
         await using var stream = new FileStream(ownerIndexFilePath, FileMode.Append, FileAccess.Write, FileShare.Read);
         await stream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(directoryId.Value + Environment.NewLine));
         await stream.FlushAsync();
-    }
-
-
-    private static async Task CreatePartialFileMarker(string fileDirectoryPath)
-    {
-        var markerFilePath = Path.Combine(fileDirectoryPath, PartialFileMarkerName);
-        await using var stream = File.Create(markerFilePath);
-        await stream.FlushAsync();
-    }
-
-    private static bool PartialFileMarkerExists(string fileDirectoryPath)
-    {
-        var markerFilePath = Path.Combine(fileDirectoryPath, PartialFileMarkerName);
-        return File.Exists(markerFilePath);
-    }
-
-    private static void DeletePartialFileMarker(string fileDirectoryPath)
-    {
-        var markerFilePath = Path.Combine(fileDirectoryPath, PartialFileMarkerName);
-        using var fileStream = new FileStream(markerFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.DeleteOnClose);
     }
 }

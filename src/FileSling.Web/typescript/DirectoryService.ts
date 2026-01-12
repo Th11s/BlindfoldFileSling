@@ -19,6 +19,7 @@ import {
 } from "./Cryptography";
 import * as _apiClient from "./HttpClient";
 import * as Model from "./Model";
+import * as Utils from "./Utils";
 
 
 export async function getDirectories() : Promise<Model.DirectoryMetadataWithUserCaps[]> {
@@ -62,10 +63,9 @@ export async function getDirectories() : Promise<Model.DirectoryMetadataWithUser
                         ...metadata,
                         capabilities: {
                             hasDirectoryKey: true,
-                            canManageDirectory: true,
 
-                            canUploadFiles: isAuthed, // TODO: get from metadata
-                            canDownloadFiles: isAuthed // TODO: get from metadata
+                            canUploadFiles: !!metadata.settings?.allowUpload,
+                            canDownloadFiles: !!metadata.settings?.allowDownload
                         }
                     });
 
@@ -196,7 +196,7 @@ export async function createDirectory(directoryName: string): Promise<void> {
     }
 }
 
-export async function createFileInDirectory(directoryId: string, file: File): Promise<void> {
+export async function createFileInDirectory(directoryId: string, file: File): Promise<Model.FileMetadata | null> {
     const cryptoKey = await getStoredDirectoryKey(directoryId);
 
     const protectableData: Model.FileProtectedData = {
@@ -224,10 +224,57 @@ export async function createFileInDirectory(directoryId: string, file: File): Pr
             mimeType: file.type
         };
 
+        return metadata;
+
         // TODO
         // Events.raiseFileCreated({ metadata });
     }
+
+    return null;
 }
+
+export async function uploadFile(fileMetadata: Model.FileMetadata, file: File): Promise<void> {
+    const cryptoKey = await getStoredDirectoryKey(fileMetadata.directoryId);
+
+    let chunkIndex = 0;
+
+    for await (const chunk of readFileInChunks(file)) {
+        const { encrypted, iv } = await encryptChunk(cryptoKey, chunk);
+
+        await _apiClient.uploadFileChunk(fileMetadata.directoryId, fileMetadata.fileId, chunkIndex, iv, encrypted);
+
+        console.log(`Uploaded chunk ${chunkIndex}`);
+        chunkIndex++;
+    }
+
+    await _apiClient.finalizeFile(fileMetadata.directoryId, fileMetadata.fileId);
+    console.log("Upload complete");
+}
+
+
+async function* readFileInChunks(file: File, chunkSize = 100 * 1000 * 1000) {
+    let offset = 0;
+
+    while (offset < file.size) {
+        const slice = file.slice(offset, offset + chunkSize);
+        const buffer = await slice.arrayBuffer();
+        yield buffer;
+        offset += chunkSize;
+    }
+}
+
+async function encryptChunk(key: CryptoKey, chunk: ArrayBuffer) {
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // AES-GCM IV
+    const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        chunk
+    );
+
+    return { encrypted, iv: Utils.uInt8ArrayToBase64(iv) };
+}
+
+
 
 export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadata | null> {
     let metadata: Model.DirectoryMetadata | null = await getStoredDirectoryMetadata(directoryId);

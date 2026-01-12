@@ -15,6 +15,13 @@ interface DirectoryMetadataBase {
 
     maxStorageSpace: string;
     usedStorageSpace: string;
+
+    settings?: DirectorySettings;
+}
+
+interface DirectorySettings {
+    allowUpload?: boolean;
+    allowDownload?: boolean;
 }
 
 export interface DirectoryMetadataResponse extends DirectoryMetadataBase {
@@ -25,10 +32,10 @@ export interface DirectoryMetadata extends DirectoryMetadataBase, DirectoryProte
 }
 
 export interface DirectoryMetadataWithUserCaps extends DirectoryMetadata {
-    capabilities: DirectoryCapabilities;
+    capabilities: UserCapabilities;
 }
 
-interface DirectoryCapabilities {
+interface UserCapabilities {
     hasDirectoryKey?: boolean;
     canManageDirectory?: boolean;
 

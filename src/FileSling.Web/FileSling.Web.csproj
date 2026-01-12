@@ -6,6 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 
 		<RootNamespace>Th11s.FileSling.Web</RootNamespace>
+		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 	</PropertyGroup>
 
 	<ItemGroup>

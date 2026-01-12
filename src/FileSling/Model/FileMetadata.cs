@@ -3,7 +3,6 @@
 public record FileMetadata(
     FileId Id,
     DirectoryId DirectoryId,
-    OwnerId OwnerId,
     
     DateTimeOffset CreatedAt,
     

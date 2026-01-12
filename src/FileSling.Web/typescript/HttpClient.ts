@@ -62,6 +62,33 @@ export async function createFile(directoryId: string, command: CreateFileCommand
     });
 }
 
+export async function uploadFileChunk(
+    directoryId: string,
+    fileId: string,
+    chunkIndex: number,
+    iv: string,
+    encrypted: ArrayBuffer
+) {
+    await fetch(`/api/file/${directoryId}/${fileId}`, {
+        method: "PUT",
+        headers: {
+            "X-Chunk": chunkIndex.toString(),
+            "X-IV": iv,
+            "Content-Type": "application/octet-stream"
+        },
+        body: encrypted
+    });
+}
+
+export async function finalizeFile(
+    directoryId: string,
+    fileId: string
+) {
+    await fetch(`/api/file/${directoryId}/${fileId}`, {
+        method: "POST"
+    });
+}
+
 
 export async function getDirectory(directoryId: string): Promise<Model.DirectoryMetadataResponse | undefined> {
     const response = await fetch(`api/directory/${directoryId}`);
