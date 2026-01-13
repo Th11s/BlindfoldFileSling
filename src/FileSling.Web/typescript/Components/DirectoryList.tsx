@@ -32,7 +32,7 @@ function DirectoryList() {
             {directories.map(dir => (
                 <a className="directory-item" key={dir.directoryId} href={`ls/${dir.directoryId}`}>
                     <img className="icon" src="icons/folder.svg" alt="Folder Icon" />
-                    <h2 className="name">{dir.displayName}</h2>
+                    <div className="name">{dir.displayName}</div>
                     <div className="dates">{dir.createdAt} - {dir.expiresAt}</div>
                     <div className="last-upload">{dir.lastFileUploadAt}</div>
                     <div className="disk-space">{dir.usedStorageSpace} / {dir.maxStorageSpace}</div>

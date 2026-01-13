@@ -42,6 +42,8 @@ p {
     --text-color: light-dark(#151518, #faf9f6);
     --accent-color: light-dark(#d5920c, #f2ab1c);
     --background-color: light-dark(#faf9f6, #151518);
+    --background-color-alt: light-dark(#eae9e6, #252528);
+    --background-color-selected: light-dark(#dad9d6, #454548);
     /* Font size */
     --font-size: 16px;
 
@@ -76,15 +78,15 @@ body {
         column-gap: 0.5rem;
         grid-template-areas:
             "icon name"
-            "icon dates"
-            "icon last-upload"
-            "icon disk-space";
+            ". dates"
+            ". last-upload"
+            ". disk-space";
         grid-template-columns: auto 1fr;
 
         @container (min-width: 600px) {
             grid-template-areas:
                 "icon name disk-space"
-                "icon dates last-upload";
+                ". dates last-upload";
             grid-template-columns: auto 1fr 1fr;
             align-items: center;
         }
@@ -94,7 +96,7 @@ body {
             grid-template-columns: auto 2fr 1fr 1fr 1fr;
         }
 
-        ) .icon {
+        .icon {
             grid-area: icon;
             align-self: center;
             justify-self: center;
@@ -103,9 +105,9 @@ body {
         }
 
         .name {
+            font-weight: bold;
             grid-area: name;
             color: var(--accent-color);
-            line-height: 1.1;
         }
 
         .dates {
@@ -124,7 +126,7 @@ body {
         }
 
         &:nth-child(even) {
-            filter: brightness(95%);
+            background-color: var(--background-color-alt);
         }
 
         &:hover {
@@ -132,7 +134,7 @@ body {
                 text-decoration: underline;
             }
 
-            filter: brightness(90%);
+            background-color: var(--background-color-selected);
             cursor: pointer;
         }
     }
@@ -144,10 +146,70 @@ body {
         padding-bottom: 0.25rem;
     }
 
-    .file-list {
-        .file-item {
+.file-list {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--accent-color);
+
+    .file-item {
+        display: grid;
+        background-color: var(--background-color);
+        border-bottom: 1px solid var(--accent-color);
+        padding: 0.25rem 0.5rem;
+        column-gap: 0.5rem;
+        grid-template-areas:
+            "icon name name"
+            ". type type"
+            ". size size"
+            ". uploaded actions";
+        grid-template-columns: auto 1fr auto;
+
+        @container (min-width: 600px) {
+            grid-template-areas:
+                "icon name type actions"
+                ". size uploaded actions";
+            grid-template-columns: auto 1fr 1fr auto;
+            align-items: center;
+        }
+
+        @container (min-width: 900px) {
+            grid-template-areas: "icon name type size uploaded actions";
+            grid-template-columns: auto 2fr 1fr 1fr 1fr auto;
+        }
+
+        .icon {
+            grid-area: icon;
+        }
+
+        .name {
+            grid-area: name;
+        }
+
+        .uploaded {
+            grid-area: uploaded;
+        }
+
+        .size {
+            grid-area: size;
+        }
+
+        .type {
+            grid-area: type;
+        }
+
+        .actions {
+            grid-area: actions;
+        }
+
+        &:nth-child(even) {
+            background-color: var(--background-color-alt);
+        }
+
+        &:hover {
+            background-color: var(--background-color-selected);
         }
     }
+}
 
     .file-upload-container {
         padding-block: 0.5rem;

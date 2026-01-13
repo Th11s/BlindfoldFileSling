@@ -68,9 +68,16 @@ function FileList({ directoryId }: FileListProps) {
         <div className="file-list">
             {files.map(file => (
                 <div className="file-item" key={file.fileId}>
-                    <button type="button" onClick={() => handleDownload(file)}>
-                        {file.fileName}
-                    </button>
+                    <div className="icon"></div>
+                    <div className="name">{file.fileName}</div>
+                    <div className="uploaded">{file.createdAt}</div>
+                    <div className="size">{file.fileSize}</div>
+                    <div className="type">{file.mimeType} {file.extension}</div>
+                    <div className="actions">
+                        <button type="button" onClick={() => handleDownload(file)}>
+                            <i className="fa fa-download" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             ))}
         </div>

@@ -86,9 +86,9 @@ internal static class Directories
         {
             return new HttpModel.DirectoryMetadata(
                 directory.Id.Value,
-                directory.CreatedAt.ToString("r"),
-                directory.ExpiresAt.ToString("r"),
-                directory.LastFileUploadAt?.ToString("r") ?? lr["LastFileUpload.Never"],
+                directory.CreatedAt.ToString("ddd, dd MMM yy"),
+                directory.ExpiresAt.ToString("ddd, dd MMM yy"),
+                directory.LastFileUploadAt?.ToString("ddd, dd MMM yy HH:mm") ?? lr["LastFileUpload.Never"],
                 directory.MaxStorageBytes.ToReadableFileSize(),
                 directory.UsedStorageBytes.ToReadableFileSize(),
          
