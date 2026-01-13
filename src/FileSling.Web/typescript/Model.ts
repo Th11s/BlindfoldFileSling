@@ -48,13 +48,18 @@ interface FileMetadataBase {
     fileId: string;
 
     createdAt: string;
-    downloadCount: number;
+
+    fileSizeBytes: number;
+    chunkCount: number;
+
     fileSize: string;
+    downloadCount: number;
 }
 
 export interface FileProtectedData {
     fileName: string;
-    mimeType?: string;
+    extension: string;
+    mimeType: string;
 }
 
 export interface FileMetadataResponse extends FileMetadataBase {

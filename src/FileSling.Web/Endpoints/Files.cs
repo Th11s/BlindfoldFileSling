@@ -1,4 +1,7 @@
 ﻿
+using System;
+using System.IO;
+
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -17,7 +20,6 @@ internal static class Files
     internal static async Task<Ok<HttpModel.FileMetadata>> Create(
         string directoryId,
         Requests.Commands.CreateFile command,
-        HttpContext context,
         IFileStorage fileStorage,
         IStringLocalizer<SharedResources> localizer)
     {
@@ -30,11 +32,10 @@ internal static class Files
     internal static async Task<Ok> Append(
         string directoryId,
         string fileId,
-        [FromHeader(Name = "X-Chunk")] int chunkIndex,
-        [FromHeader(Name = "X-IV")] string aesIV,
+        [FromQuery(Name = "chunk")] int chunkIndex,
+        [FromQuery(Name = "iv")] string aesIV,
         IFileStorage storage,
-        Stream fileChunk,
-        HttpContext context)
+        Stream fileChunk)
     {
         await storage.WriteFileChunk(
             new(directoryId),
@@ -51,9 +52,26 @@ internal static class Files
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> Download(HttpContext context)
+    internal static async Task Download(string directoryId,
+        string fileId,
+        [FromQuery(Name = "chunk")] int chunkIndex,
+        IFileStorage storage,
+        Stream fileChunk,
+        HttpResponse response)
     {
-        throw new NotImplementedException();
+        var chunkStream = await storage.GetFileChunk(
+            new(directoryId),
+            new(fileId),
+            (uint)chunkIndex
+        );
+
+        response.ContentType = "application/octet-stream";
+
+        // Copy stream to response
+        response.Headers["X-IV"] = chunkStream.EncryptionHeader;
+        await chunkStream.CipherStream.CopyToAsync(response.Body);
+
+        await response.Body.FlushAsync();
     }
 
     internal static async Task<Ok> FinalizeUpload(
@@ -90,6 +108,8 @@ internal static class Files
 
                 file.CreatedAt.ToString("r"),
                 
+                file.SizeInBytes,
+                file.ChunkCount,
                 file.SizeInBytes.ToReadableFileSize(),
                 file.DownloadCount,
 

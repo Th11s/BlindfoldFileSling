@@ -49,6 +49,7 @@ export async function createDirectory(command: CreateDirectoryCommand) : Promise
 }
 
 interface CreateFileCommand {
+    fileSizeBytes: number;
     protectedData: Model.EncryptedString;
 }
 
@@ -69,11 +70,9 @@ export async function uploadFileChunk(
     iv: string,
     encrypted: ArrayBuffer
 ) {
-    await fetch(`/api/file/${directoryId}/${fileId}`, {
+    await fetch(`/api/file/${directoryId}/${fileId}?chunk=${chunkIndex}&iv=${encodeURIComponent(iv)}`, {
         method: "PUT",
         headers: {
-            "X-Chunk": chunkIndex.toString(),
-            "X-IV": iv,
             "Content-Type": "application/octet-stream"
         },
         body: encrypted
@@ -87,6 +86,20 @@ export async function finalizeFile(
     await fetch(`/api/file/${directoryId}/${fileId}`, {
         method: "POST"
     });
+}
+
+
+export async function downloadFileChunk(
+    directoryId: string,
+    fileId: string,
+    chunkIndex: number
+): Promise<{ buffer: ArrayBuffer, iv: string } | null> {
+    const response = await fetch(`/api/file/${directoryId}/${fileId}?chunk=${chunkIndex}`);
+    if (!response.ok) {
+        return null;
+    }
+
+    return { buffer: await response.arrayBuffer(), iv: response.headers.get("X-IV") || "" };
 }
 
 

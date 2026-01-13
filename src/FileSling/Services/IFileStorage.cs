@@ -22,5 +22,5 @@ public interface IFileStorage
     Task<DirectoryMetadata?> GetDirectory(DirectoryId directoryId);
     Task<IEnumerable<FileMetadata>> ListDirectoryContent(DirectoryId directoryId);
 
-    Task<Stream?> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber);
+    Task<EncryptedStream> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber);
 }

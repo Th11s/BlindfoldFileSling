@@ -201,12 +201,13 @@ export async function createFileInDirectory(directoryId: string, file: File): Pr
 
     const protectableData: Model.FileProtectedData = {
         fileName: file.name,
-        mimeType: file.type
+        mimeType: file.type,
+        extension: file.name.split('.').pop() || ''
     };
 
     const protectedData = await encryptObjectAsBase64WithHeader(protectableData, cryptoKey);
 
-    const response = await _apiClient.createFile(directoryId, { protectedData: protectedData });
+    const response = await _apiClient.createFile(directoryId, { fileSizeBytes: file.size, protectedData: protectedData });
 
     if (response.ok) {
         console.debug(`File "${file.name}" created successfully.`);
@@ -217,11 +218,14 @@ export async function createFileInDirectory(directoryId: string, file: File): Pr
             directoryId: responseObject.directoryId,
             fileId: responseObject.fileId,
             createdAt: responseObject.createdAt,
-            downloadCount: responseObject.downloadCount,
             fileSize: responseObject.fileSize,
+            fileSizeBytes: responseObject.fileSizeBytes,
+            chunkCount: responseObject.chunkCount,
+            downloadCount: responseObject.downloadCount,
 
             fileName: file.name,
-            mimeType: file.type
+            extension: file.name.split('.').pop() || '',
+            mimeType: file.type,
         };
 
         return metadata;
@@ -274,6 +278,36 @@ async function encryptChunk(key: CryptoKey, chunk: ArrayBuffer) {
     return { encrypted, iv: Utils.uInt8ArrayToBase64(iv) };
 }
 
+export async function downloadFile(
+    file: Model.FileMetadata,
+    fileHandle: any): Promise<void> {
+    
+    const cryptoKey = await getStoredDirectoryKey(file.directoryId);
+    const writable = await fileHandle.createWritable();
+
+    for (let chunkIndex = 0; chunkIndex < file.chunkCount; chunkIndex++) {
+        const chunk = await _apiClient.downloadFileChunk(file.directoryId, file.fileId, chunkIndex);
+        if (!chunk) {
+            throw new Error(`Failed to download chunk ${chunkIndex}`);
+        }
+
+        const decryptedChunk = await decryptChunk(cryptoKey, chunk.iv, chunk.buffer);
+
+        await writable.write(decryptedChunk);
+    }
+
+    await writable.close();
+}
+
+async function decryptChunk(key: CryptoKey, ivBase64: string, encryptedChunk: ArrayBuffer) {
+    const iv = Utils.base64ToUint8Array(ivBase64);
+    const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encryptedChunk
+    );
+    return decrypted;
+}
 
 
 export async function getDirectoryMetadata(directoryId: string): Promise<Model.DirectoryMetadata | null> {
@@ -344,10 +378,13 @@ export async function getDirectoryFiles(directoryId: string): Promise<Model.File
 
             fileName: unprotectedData.fileName,
             mimeType: unprotectedData.mimeType,
+            extension: unprotectedData.extension,
 
             createdAt: fileResponse.createdAt,
             downloadCount: fileResponse.downloadCount,
-            fileSize: fileResponse.fileSize
+            fileSize: fileResponse.fileSize,
+            fileSizeBytes: fileResponse.fileSizeBytes,
+            chunkCount: fileResponse.chunkCount
         });
     }
 

@@ -104,19 +104,6 @@ public class FileSystemStorageService(
     }
 
 
-    public async Task<ChallengeId> SaveChallenge(DirectoryId directoryId, EncryptedChallenge challenge)
-    {
-        var challengeId = new ChallengeId();
-        var challengeFilePath = GetChallengeFilePath(directoryId, challengeId);
-
-        using var fileStream = new FileStream(challengeFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
-        await JsonSerializer.SerializeAsync(fileStream, challenge);
-        await fileStream.FlushAsync();
-
-        return challengeId;
-    }
-
-
     public async Task<FileMetadata> CreateFile(DirectoryId directoryId, CreateFile command)
     {
         var directoryMetadata = await ReadMetadataFile<DirectoryMetadata>(
@@ -144,7 +131,7 @@ public class FileSystemStorageService(
             _timeProvider.GetUtcNow(),
 
             command.SizeInBytes,
-            command.ChunkCount,
+            0,
             0,
 
             command.ProtectedData
@@ -170,10 +157,13 @@ public class FileSystemStorageService(
         }
 
         var filePath = GetChunkFilePath(directoryId, fileId, command.ChunkNumber, FileAccess.Write);
+        var ivFilePath = Path.ChangeExtension(filePath, ".iv");
 
         using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
         await command.EncryptedStream.CipherStream.CopyToAsync(fileStream);
         await fileStream.FlushAsync();
+
+        await File.WriteAllTextAsync(ivFilePath, command.EncryptedStream.EncryptionHeader);
     }
 
 
@@ -195,14 +185,38 @@ public class FileSystemStorageService(
         return Task.CompletedTask;
     }
 
-    public Task FinalizeFile(DirectoryId directoryId, FileId fileId)
+    public async Task FinalizeFile(DirectoryId directoryId, FileId fileId)
     {
         var partialFilePath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Write);
+        if(!Directory.Exists(partialFilePath))
+        {
+            throw new InvalidOperationException("Partial file does not exist.");
+        }
+
+        var metadata = await ReadMetadataFile<FileMetadata>(
+            partialFilePath,
+            FileMetadataFileName
+        );
+
+        var chunkCount = Directory.EnumerateFiles(
+                partialFilePath, 
+                $"*.{ChunkFileExtension}", 
+                SearchOption.TopDirectoryOnly)
+            .Count();
+
+        metadata = metadata with
+        {
+            ChunkCount = chunkCount
+        };
+
+        await UpdateMetadataFile(
+            partialFilePath,
+            FileMetadataFileName,
+            metadata
+        );
+
         var finalizedFilePath = GetFileDirectoryPath(directoryId, fileId, FileAccess.Read);
-
         Directory.Move(partialFilePath, finalizedFilePath);
-
-        return Task.CompletedTask;
     }
 
 
@@ -292,17 +306,19 @@ public class FileSystemStorageService(
     }
 
 
-    public Task<Stream?> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber)
+    public async Task<EncryptedStream?> GetFileChunk(DirectoryId directoryId, FileId fileId, uint chunkNumber)
     {
         // get chunk file path
         var chunkFilePath = GetChunkFilePath(directoryId, fileId, chunkNumber, FileAccess.Read);
         if(!File.Exists(chunkFilePath))
         {
-            return Task.FromResult<Stream?>(null);
+            return null;
         }
 
+        var iv = await File.ReadAllTextAsync(Path.ChangeExtension(chunkFilePath, ".iv"));
+
         var fileStream = new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return Task.FromResult<Stream?>(fileStream);
+        return new EncryptedStream(iv, fileStream);
     }
 
 
@@ -313,12 +329,6 @@ public class FileSystemStorageService(
         return directoryPath;
     }
 
-    private string GetChallengeFilePath(DirectoryId directoryId, ChallengeId challengeId)
-    {
-        var directoryPath = GetDirectoryPath(directoryId);
-        var challengeFilePath = Path.Combine(directoryPath, $"{challengeId.Value}.challenge");
-        return challengeFilePath;
-    }
 
     private string GetFileDirectoryPath(DirectoryId directoryId, FileId fileId, FileAccess fileAccess)
     {

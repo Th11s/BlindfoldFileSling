@@ -1,7 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import * as DirectoryService from "../DirectoryService";
+import {
+    getDirectoryFiles,
+    downloadFile
+} from "../DirectoryService";
 
 import { ActivityIndicator } from "./ActivityIndicator";
 import * as Model from "../Model"
@@ -10,20 +13,48 @@ interface FileListProps {
     directoryId: string;
 }
 
-
 function FileList({ directoryId }: FileListProps) {
     const [files, setFiles] = React.useState<Model.FileMetadata[]>([]);
     const [loading, setLoading] = React.useState<boolean>(true);
 
     React.useEffect(() => {
         async function fetchFiles() {
-            const files = await DirectoryService.getDirectoryFiles(directoryId);
+            const files = await getDirectoryFiles(directoryId);
             setFiles(files || []);
             setLoading(false);
         }
 
         fetchFiles();
     }, [directoryId]);
+
+    // Download handler using the File System Access API
+    const handleDownload = async (file: Model.FileMetadata) => {
+        try {
+            
+            // Prompt user for destination file using File System Access API
+            // @ts-ignore: File System Access API is not yet in TypeScript lib.dom.d.ts
+            const fileHandle = await window.showSaveFilePicker({
+                suggestedName: file.fileName,
+                types: [
+                    {
+                        description: "All Files",
+                        accept: { [file.mimeType]: [`.${file.extension}`] }
+                    }
+                ]
+            });
+
+            if (!fileHandle) {
+                return;
+            }
+
+            downloadFile(file, fileHandle);
+            
+        } catch (err) {
+            if ((err as any).name !== "AbortError") {
+                alert("Download failed: " + ((err as Error).message || err));
+            }
+        }
+    };
 
     if (loading) {
         return <ActivityIndicator />;
@@ -37,7 +68,9 @@ function FileList({ directoryId }: FileListProps) {
         <div className="file-list">
             {files.map(file => (
                 <div className="file-item" key={file.fileId}>
-                    <a href={`file/${file.directoryId}/${file.fileId}`}>{file.fileName}</a>
+                    <button type="button" onClick={() => handleDownload(file)}>
+                        {file.fileName}
+                    </button>
                 </div>
             ))}
         </div>

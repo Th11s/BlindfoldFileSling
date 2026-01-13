@@ -7,7 +7,7 @@ public record FileMetadata(
     DateTimeOffset CreatedAt,
     
     long SizeInBytes,
-    uint ChunkCount,
+    int ChunkCount,
     int DownloadCount,
 
     string ProtectedData

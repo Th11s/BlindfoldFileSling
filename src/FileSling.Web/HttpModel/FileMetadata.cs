@@ -6,7 +6,10 @@ public record FileMetadata(
 
     string CreatedAt,
 
+    long FileSizeBytes,
+    int ChunkCount,
     string FileSize,
+    
     int? DownloadCount,
 
     string ProtectedData
